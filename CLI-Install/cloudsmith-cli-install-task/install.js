@@ -1,36 +1,41 @@
 const tl = require('azure-pipelines-task-lib/task');
 const exec = require('child_process').exec;
 
-async function run() {
-  try {
-    // Get the user-specified CLI version from the task input, if provided
-    const cliVersion = tl.getInput('cliVersion', false);
-    //false=optional
-    let installCmd = 'pip install cloudsmith-cli';
-    // Default to latest version
-    
-    // If a version is specified, add it to the installation command
-    if (cliVersion) {
-      installCmd = `pip install cloudsmith-cli==${cliVersion}`;
-    }
+function installCloudsmithCLI(version) {
+  return new Promise((resolve, reject) => {
+    // If version is specified, use that version. Otherwise, install the latest.
+    const installCmd = version
+      ? `pip install cloudsmith-cli==${version}`
+      : 'pip install cloudsmith-cli';
 
-    console.log(`Installing Cloudsmith CLI... Command: ${installCmd}`);
+    console.log(`Installing Cloudsmith CLI ${version ? 'version ' + version : '(latest version)'}...`);
 
     exec(installCmd, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error: ${error.message}`);
-        tl.setResult(tl.TaskResult.Failed, error.message);
-        return;
-      }
-      if (stderr) {
+        reject(`Error: ${error.message}`);
+      } else if (stderr) {
         console.error(`Stderr: ${stderr}`);
+        resolve(stdout);
+      } else {
+        console.log(`Stdout: ${stdout}`);
+        resolve(stdout);
       }
-      console.log(`Stdout: ${stdout}`);
-      tl.setResult(tl.TaskResult.Succeeded, 'Cloudsmith CLI installed successfully.');
     });
-  } catch (err) {
-    tl.setResult(tl.TaskResult.Failed, err.message);
-  }
+  });
+}
+
+function run() {
+  const cliVersion = tl.getInput('cliVersion', false); // Get the CLI version, if provided
+
+  installCloudsmithCLI(cliVersion)
+    .then((message) => {
+      console.log(message);
+      tl.setResult(tl.TaskResult.Succeeded, 'Cloudsmith CLI installed successfully.');
+    })
+    .catch((error) => {
+      console.error(error);
+      tl.setResult(tl.TaskResult.Failed, error);
+    });
 }
 
 run();
