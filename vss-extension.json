@@ -1,10 +1,10 @@
 {
   "manifestVersion": 1,
-  "id": "cloudsmith-cli-install",
+  "id": "CloudsmithCliSetupAndAuthenticate",
   "publisher": "Cloudsmith",
-  "version": "1.0.0",
-  "name": "Cloudsmith CLI Install",
-  "description": "This extension installs the Cloudsmith CLI to the build agent.",
+  "version": "0.0.1",
+  "name": "Cloudsmith CLI Setup & Authenticate",
+  "description": "An Azure DevOps extension to install and authenticate the Cloudsmith CLI using API Key or OIDC.",
   "targets": [
     {
       "id": "Microsoft.VisualStudio.Services"
@@ -14,11 +14,11 @@
     "Azure Pipelines"
   ],
   "icons": {
-    "default": "CloudsmithSymbol--RGB@S.png"
+    "default": "images/icon.png"
   },
   "files": [
     {
-      "path": "cloudsmith-cli-install-task",
+      "path": "cloudsmith-task",
       "addressable": true
     }
   ],
@@ -28,7 +28,7 @@
   },
   "links": {
     "privacy": {
-      "uri": "https://help.cloudsmith.io/docs/individual-privacy-policy"
+      "uri": "https://help.cloudsmith.io/docs/legal-policies-overview"
     },
     "license": {
       "uri": "https://help.cloudsmith.io/docs/contributor-license-agreement"
@@ -39,13 +39,13 @@
   },
   "contributions": [
     {
-      "id": "cloudsmith-cli-install",
+      "id": "cloudsmith-task",
       "type": "ms.vss-distributed-task.task",
       "targets": [
         "ms.vss-distributed-task.tasks"
       ],
       "properties": {
-        "name": "cloudsmith-cli-install-task"
+        "name": "cloudsmith-task"
       }
     }
   ]

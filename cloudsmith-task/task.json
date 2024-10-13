@@ -1,0 +1,70 @@
+{
+  "id": "06C63887-BA6C-4F36-8BB5-34A817634C29",
+  "name": "CloudsmithCliSetupAndAuthenticate",
+  "friendlyName": "Cloudsmith CLI Setup & Authenticate",
+  "description": "Installs the Cloudsmith CLI and authenticates using API Key or OIDC.",
+  "helpMarkDown": "Use this task to install and authenticate the Cloudsmith CLI during your Azure DevOps pipeline. For issues, contact: support@cloudsmith.io",
+  "category": "Utility",
+  "visibility": ["Build", "Release"],
+  "author": "Ranjan Singh(rsingh@cloudsmith.io)",
+  "version": {
+    "Major": 0,
+    "Minor": 0,
+    "Patch": 1
+  },
+  "instanceNameFormat": "Install and Authenticate Cloudsmith CLI",
+  "inputs": [
+    {
+      "name": "cliVersion",
+      "type": "string",
+      "label": "Cloudsmith CLI Version",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Specify the version of Cloudsmith CLI to install (e.g., '0.25.0'). Leave empty to install the latest version."
+    },
+    {
+      "name": "authMethod",
+      "type": "string",
+      "label": "Authentication Method",
+      "defaultValue": "apiKey",
+      "options": {
+        "apiKey": "API Key",
+        "oidc": "OIDC"
+      },
+      "required": true,
+      "helpMarkDown": "Select your preferred authentication method. Use 'apikey' for API Key-based authentication or 'oidc' for OpenID Connect (OIDC). Ensure you provide the relevant credentials based on your selection."
+    },
+    {
+      "name": "apiKey",
+      "type": "string",
+      "label": "Cloudsmith API Key",
+      "required": false,
+      "helpMarkDown": "Provide the Cloudsmith API key if API Key authentication is selected.",
+      "visibleRule": "authMethod = apiKey"
+    },
+    {
+      "name": "oidcNamespace",
+      "type": "string",
+      "label": "OIDC Namespace",
+      "required": false,
+      "helpMarkDown": "Provide the Cloudsmith organisation/namespace for OIDC.",
+      "visibleRule": "authMethod = oidc"
+    },
+    {
+      "name": "oidcServiceSlug",
+      "type": "string",
+      "label": "OIDC Service Account Slug",
+      "required": false,
+      "helpMarkDown": "Provide the Cloudsmith service account slug for OIDC (optional).",
+      "visibleRule": "authMethod = oidc"
+    }
+  ],
+  "execution": {
+    "Node10": {
+      "target": "main.js"
+    },
+    "Node18": {
+      "target": "main.js"
+    }
+  }
+}
