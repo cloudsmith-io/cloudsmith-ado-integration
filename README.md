@@ -113,7 +113,7 @@ There are two supported authentication methods: **API Key** and **OIDC**. You ne
    apiKey: '$(CLOUDSMITH_API_KEY)'
    ```
 
-**API Key Authentication**:
+**OIDC Authentication**:
    To authenticate via OIDC, make sure the OIDC_NAMESPACE and OIDC_SERVICE_SLUG are properly set as inputs or environment variables in the pipeline.
    
    ```yaml
@@ -122,7 +122,7 @@ There are two supported authentication methods: **API Key** and **OIDC**. You ne
    oidcServiceSlug: '$(your-service-slug)'
    ```
 
-## Authentication Options
+## Contributing
 
 If you’d like to contribute to this project, feel free to submit a pull request. Please ensure your code adheres to the project’s coding guidelines and includes necessary documentation.
 
