@@ -6,7 +6,7 @@
   "helpMarkDown": "Use this task to install and authenticate the Cloudsmith CLI during your Azure DevOps pipeline. For issues, contact: support@cloudsmith.io",
   "category": "Utility",
   "visibility": ["Build", "Release"],
-  "author": "Ranjan Singh(rsingh@cloudsmith.io)",
+  "author":"Cloudsmith Ltd(support@cloudsmith.io)",
   "version": {
     "Major": 0,
     "Minor": 0,

@@ -1,6 +1,6 @@
 {
   "name": "cloudsmith-pipeline-extension",
-  "version": "0.1.1",
+  "version": "0.0.1",
   "description": "Azure DevOps Extension to install and authenticate Cloudsmith CLI.",
   "main": "main.js",
   "dependencies": {
