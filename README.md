@@ -60,7 +60,7 @@ If you’d like to contribute to this project, feel free to submit a pull reques
 
 ## License
 
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
 ## Support
 
