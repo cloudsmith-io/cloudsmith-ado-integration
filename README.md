@@ -21,11 +21,15 @@ Once the extension is installed, you can use it in your Azure DevOps pipelines b
   # Install and Authenticate with Cloudsmith CLI
   - task: CloudsmithCliInstallAndAuthenticate@0
     inputs:
-      authMethod: 'apiKey'          # Choose 'apiKey' for API Key authentication or 'oidc' for OIDC authentication
+      cliVersion: '1.3.1'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
+      authMethod: 'apiKey' # Choose 'apiKey' for API Key authentication or 'oidc' for OIDC authentication
       apiKey: '$(CLOUDSMITH_API_KEY)'  # Only required if using 'apiKey' authentication
+      clientId: '$(YOUR_CLIENT_ID)' # Required if authMethod is set to 'oidc'. This is the Client ID from your Azure AD application used for OIDC authentication.
+      clientSecret: '$(YOUR_CLIENT_SECRET)' # Required if authMethod is set to 'oidc'. This is the Client Secret associated with the Azure AD application.
+      appIdUri: '$(YOUR_APP_ID_URI)'  # Required if authMethod is set to 'oidc'. This is the Application ID URI of your Azure AD application. Make sure to include the full URI.
+      tenantId: '$(YOUR_TENANT_ID)'  # Required if authMethod is set to 'oidc'. This is the Tenant ID for your Azure AD, which identifies your Azure AD instance.
       oidcNamespace: '$(your-namespace)'  # Only required if using OIDC authentication
       oidcServiceSlug: '$(your-service-slug)'  # Optional: Provide if needed for OIDC authentication
-      cliVersion: '1.3.1'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
 
   # Push a package to Cloudsmith
   - script: |
@@ -46,10 +50,14 @@ There are two supported authentication methods: **API Key** and **OIDC**. You ne
    ```
 
 **OIDC Authentication**:
-   To authenticate via OIDC, make sure the OIDC_NAMESPACE and OIDC_SERVICE_SLUG are properly set as inputs or environment variables in the pipeline.
+   To authenticate via OIDC, ensure that clientId, clientSecret, appIdUri, tenantId, oidcNamespace, and oidcServiceSlug are correctly set as inputs or environment variables in the pipeline.
    
    ```yaml
    authMethod: 'oidc'
+   clientId: '$(YOUR_CLIENT_ID)'
+   clientSecret: '$(YOUR_CLIENT_SECRET)'
+   appIdUri: '$(YOUR_APP_ID_URI)'
+   tenantId: '$(YOUR_TENANT_ID)' 
    oidcNamespace: '$(your-namespace)'
    oidcServiceSlug: '$(your-service-slug)'
    ```

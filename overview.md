@@ -21,7 +21,7 @@ With this extension, you can:
 1. Add this task to your Azure DevOps pipeline.
 2. Choose your authentication method (API Key or OIDC). 
    - If using **API Key** authentication, you must provide the `apiKey`.
-   - If using **OIDC** authentication, you must provide the `oidcNamespace` and `oidcServiceSlug`.
+   - If using **OIDC** authentication, you must provide the `clientId`, `clientSecret`, `appIdUri`, `tenantId`, `oidcNamespace` and `oidcServiceSlug`.
 3. Optionally, specify the Cloudsmith CLI version you want to install.
 4. Enjoy seamless integration with Cloudsmith for managing your artifacts.
 
@@ -38,11 +38,15 @@ jobs:
     # Install and Authenticate with Cloudsmith CLI
     - task: CloudsmithCliInstallAndAuthenticate
       inputs:
-        authMethod: 'apiKey'          # Choose 'apiKey' for API Key authentication or 'oidc' for OIDC authentication
+        cliVersion: '1.3.1'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
+        authMethod: 'apiKey' # Choose 'apiKey' for API Key authentication or 'oidc' for OIDC authentication
         apiKey: '$(CLOUDSMITH_API_KEY)'  # Only required if using 'apiKey' authentication
+        clientId: '$(YOUR_CLIENT_ID)' # Required if authMethod is set to 'oidc'. This is the Client ID from your Azure AD application used for OIDC authentication.
+        clientSecret: '$(YOUR_CLIENT_SECRET)' # Required if authMethod is set to 'oidc'. This is the Client Secret associated with the Azure AD application.
+        appIdUri: '$(YOUR_APP_ID_URI)'  # Required if authMethod is set to 'oidc'. This is the Application ID URI of your Azure AD application. Make sure to include the full URI.
+        tenantId: '$(YOUR_TENANT_ID)'  # Required if authMethod is set to 'oidc'. This is the Tenant ID for your Azure AD, which identifies your Azure AD instance.
         oidcNamespace: '$(your-namespace)'  # Only required if using OIDC authentication
         oidcServiceSlug: '$(your-service-slug)'  # Optional: Provide if needed for OIDC authentication
-        cliVersion: 'latest'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
 
     # Example Cloudsmith push
     - script: |
