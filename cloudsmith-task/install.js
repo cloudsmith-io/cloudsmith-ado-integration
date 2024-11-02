@@ -95,7 +95,7 @@ async function installCli(cliVersion) {
         : 'Installing the latest version of Cloudsmith CLI...'
     );
     await downloadCli(cliVersion);
-    console.log('Cloudsmith CLI installed successfully.');
+    console.log('Cloudsmith CLI installation started.');
   } catch (error) {
     tl.setResult(tl.TaskResult.Failed, `Failed to install the CLI: ${error.message}`);
   }
