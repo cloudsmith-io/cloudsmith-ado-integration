@@ -1,0 +1,52 @@
+{
+  "manifestVersion": 1,
+  "id": "CloudsmithCliSetupAndAuthenticate",
+  "publisher": "Cloudsmith",
+  "version": "0.0.1",
+  "name": "Cloudsmith CLI Setup & Authenticate",
+  "description": "An Azure DevOps extension to install and authenticate the Cloudsmith CLI using API Key or OIDC.",
+  "targets": [
+    {
+      "id": "Microsoft.VisualStudio.Services"
+    }
+  ],
+  "categories": [
+    "Azure Pipelines"
+  ],
+  "icons": {
+    "default": "images/icon.png"
+  },
+  "files": [
+    {
+      "path": "cloudsmith-task",
+      "addressable": true
+    }
+  ],
+  "public": true,
+  "details": {
+    "path": "overview.md"
+  },
+  "links": {
+    "privacy": {
+      "uri": "https://help.cloudsmith.io/docs/legal-policies-overview"
+    },
+    "license": {
+      "uri": "https://help.cloudsmith.io/docs/contributor-license-agreement"
+    },
+    "support": {
+      "uri": "https://help.cloudsmith.io"
+    }
+  },
+  "contributions": [
+    {
+      "id": "cloudsmith-task",
+      "type": "ms.vss-distributed-task.task",
+      "targets": [
+        "ms.vss-distributed-task.tasks"
+      ],
+      "properties": {
+        "name": "cloudsmith-task"
+      }
+    }
+  ]
+}
