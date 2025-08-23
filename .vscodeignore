@@ -1,0 +1,24 @@
+# General VCS/IDE noise
+**/.git/**
+**/.github/**
+**/.vscode/**
+**/.idea/**
+**/.history/**
+
+# Build/test artifacts
+**/coverage/**
+**/dist/**
+**/out/**
+**/tests/**
+
+# Logs & maps
+**/*.log
+**/*.map
+
+# Source you don't ship (keep JS; exclude TS sources if you compile to JS)
+**/*.ts
+
+# Node modules: exclude everywhere...
+**/node_modules/**
+# ...but keep the task's runtime deps
+!cloudsmith-task/node_modules/**

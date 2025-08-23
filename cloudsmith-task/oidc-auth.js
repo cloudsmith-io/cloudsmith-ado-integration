@@ -27,7 +27,7 @@ async function authenticateWithOIDC(clientId, clientSecret, appIdUri, tenantId, 
     );
 
     const azureToken = tokenResponse.data.access_token;
-    console.log('OIDC Token retrieved successfully:', azureToken);  // Print OIDC token for debugging
+    //console.log('OIDC Token retrieved successfully:', azureToken);  // Print OIDC token for debugging
 
     const payload = { oidc_token: azureToken };
     if (serviceAccountSlug) {
@@ -35,8 +35,8 @@ async function authenticateWithOIDC(clientId, clientSecret, appIdUri, tenantId, 
     }
 
     console.log('Authenticating with Cloudsmith using OIDC...');
-    console.log(`Request URL: https://api.cloudsmith.io/openid/${orgName}/`);
-    console.log('Payload:', JSON.stringify(payload, null, 2));  // Print payload for debugging
+    //console.log(`Request URL: https://api.cloudsmith.io/openid/${orgName}/`);
+    //console.log('Payload:', JSON.stringify(payload, null, 2));  // Print payload for debugging
 
     const response = await axios.post(
       `https://api.cloudsmith.io/openid/${orgName}/`,
@@ -53,7 +53,7 @@ async function authenticateWithOIDC(clientId, clientSecret, appIdUri, tenantId, 
 
     process.env.CLOUDSMITH_API_KEY = token;
     tl.setVariable('CLOUDSMITH_API_KEY', token);
-    console.log('API token stored as CLOUDSMITH_API_KEY.');
+    console.log('Ephemeral API token stored as CLOUDSMITH_API_KEY and ready to be used for next 90 Minutes');
 
     await validateToken(token);
   } catch (error) {
