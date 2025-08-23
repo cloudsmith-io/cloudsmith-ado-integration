@@ -55,7 +55,7 @@ async function authenticateWithOIDC(clientId, clientSecret, appIdUri, tenantId, 
     tl.setVariable('CLOUDSMITH_API_KEY', token);
     console.log('Ephemeral API token stored as CLOUDSMITH_API_KEY and ready to be used for next 90 Minutes');
 
-    await validateToken(token);
+    //await validateToken(token);
   } catch (error) {
     if (error.response) {
       console.error('Authentication error:', error.response.data);

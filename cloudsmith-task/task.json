@@ -23,6 +23,15 @@
       "helpMarkDown": "When enabled, the task will only authenticate via OIDC and export CLOUDSMITH_API_KEY. It will NOT install or verify the CLI."
     },
     {
+      "name": "pipInstall",
+      "type": "boolean",
+      "label": "Install via pip instead of zip-app",
+      "defaultValue": "false",
+      "required": false,
+      "visibleRule": "oidcAuthOnly = false",
+      "helpMarkDown": "Enable to install Cloudsmith CLI using pip instead of the zipapp."
+    },
+    {
       "name": "cliVersion",
       "type": "string",
       "label": "Cloudsmith CLI Version",

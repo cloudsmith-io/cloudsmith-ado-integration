@@ -3,6 +3,7 @@ const path = require('path');
 const fetch = require('node-fetch').default;
 const tl = require('azure-pipelines-task-lib/task');
 const os = require('os');
+const { exec } = require('child_process');
 
 // Define constants for URL construction
 const BASE_URL = 'https://dl.cloudsmith.io/public';
@@ -86,6 +87,25 @@ async function downloadCli(version) {
   await moveToSystemPath(); // Move to system path after downloading
 }
 
+// Install the Cloudsmith CLI via pip, optionally specifying a version
+function installCliViaPip(cliVersion) {
+  return new Promise((resolve, reject) => {
+    const pkg = cliVersion && cliVersion !== '' ? `cloudsmith-cli==${cliVersion}` : 'cloudsmith-cli';
+    const cmd = `python3 -m pip install ${pkg}`;
+    console.log(`Installing Cloudsmith CLI via pip: ${cmd}`);
+    exec(cmd, (error, stdout, stderr) => {
+      if (stdout) {
+        console.log(stdout);
+      }
+      if (error) {
+        const message = stderr && stderr.trim() ? stderr : error.message;
+        return reject(new Error(`pip install failed: ${message}`));
+      }
+      resolve();
+    });
+  });
+}
+
 // Install the CLI based on version or latest
 async function installCli(cliVersion) {
   try {
@@ -103,4 +123,6 @@ async function installCli(cliVersion) {
 
 module.exports = {
   installCli,
+  downloadCli,
+  installCliViaPip,
 };
