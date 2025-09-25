@@ -8,18 +8,36 @@
   "visibility": ["Build", "Release"],
   "author": "Cloudsmith Ltd (support@Cloudsmith.io)",
   "version": {
-    "Major": 0,
+    "Major": 1,
     "Minor": 0,
-    "Patch": 1
+    "Patch": 0
   },
   "instanceNameFormat": "Install and Authenticate Cloudsmith CLI",
   "inputs": [
+    {
+      "name": "oidcAuthOnly",
+      "type": "boolean",
+      "label": "OIDC Auth Only (skip installation)",
+      "defaultValue": "false",
+      "required": false,
+      "helpMarkDown": "When enabled, the task will only authenticate via OIDC and export CLOUDSMITH_API_KEY. It will NOT install or verify the CLI."
+    },
+    {
+      "name": "pipInstall",
+      "type": "boolean",
+      "label": "Install via pip instead of zip-app",
+      "defaultValue": "false",
+      "required": false,
+      "visibleRule": "oidcAuthOnly = false",
+      "helpMarkDown": "Enable to install Cloudsmith CLI using pip instead of the zipapp."
+    },
     {
       "name": "cliVersion",
       "type": "string",
       "label": "Cloudsmith CLI Version",
       "defaultValue": "",
       "required": false,
+      "visibleRule": "oidcAuthOnly = false",
       "helpMarkDown": "Specify the version of Cloudsmith CLI to install (e.g., '0.25.0'). Leave empty to install the latest version."
     },
     {
@@ -32,6 +50,7 @@
         "oidc": "OIDC"
       },
       "required": true,
+      "visibleRule": "oidcAuthOnly = false",
       "helpMarkDown": "Select your preferred authentication method. Use 'apiKey' for API Key-based authentication or 'oidc' for OpenID Connect (OIDC)."
     },
     {
@@ -39,7 +58,7 @@
       "type": "string",
       "label": "Azure Client ID",
       "required": false,
-      "visibleRule": "authMethod = oidc",
+      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
       "helpMarkDown": "Provide the Azure Client ID for OIDC authentication."
     },
     {
@@ -47,7 +66,7 @@
       "type": "string",
       "label": "Azure Client Secret",
       "required": false,
-      "visibleRule": "authMethod = oidc",
+      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
       "helpMarkDown": "Provide the Azure Client Secret for OIDC authentication."
     },
     {
@@ -55,7 +74,7 @@
       "type": "string",
       "label": "Azure Application ID URI",
       "required": false,
-      "visibleRule": "authMethod = oidc",
+      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
       "helpMarkDown": "Provide the Azure Entra Application ID URI for scope defining."
     },
     {
@@ -63,7 +82,7 @@
       "type": "string",
       "label": "Azure Tenant ID",
       "required": false,
-      "visibleRule": "authMethod = oidc",
+      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
       "helpMarkDown": "Provide the Azure Tenant ID for OIDC authentication."
     },
     {
@@ -71,7 +90,7 @@
       "type": "string",
       "label": "OIDC Namespace",
       "required": false,
-      "visibleRule": "authMethod = oidc",
+      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
       "helpMarkDown": "Provide the Cloudsmith organisation/namespace for OIDC."
     },
     {
@@ -79,7 +98,7 @@
       "type": "string",
       "label": "OIDC Service Account Slug",
       "required": false,
-      "visibleRule": "authMethod = oidc",
+      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
       "helpMarkDown": "Provide the Cloudsmith service account slug for OIDC."
     },
     {
@@ -87,7 +106,7 @@
       "type": "string",
       "label": "Cloudsmith API Key",
       "required": false,
-      "visibleRule": "authMethod = apiKey",
+      "visibleRule": "authMethod = apiKey && oidcAuthOnly = false",
       "helpMarkDown": "Provide the Cloudsmith API key if API Key authentication is selected."
     }
   ],

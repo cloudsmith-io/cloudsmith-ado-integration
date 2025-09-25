@@ -5,6 +5,7 @@ This Azure DevOps extension provides a task for installing the Cloudsmith CLI an
 ## Features
 
 - **Install Cloudsmith CLI**: Install the latest or a specific version of the Cloudsmith CLI.
+- **Flexible installation**: Choose installation method (zipapp or pip) and specify a version, or default to the latest.
 - **Authenticate with API Key or OIDC**: Securely authenticate with Cloudsmith to manage packages within your pipeline.
 - **Seamless Integration**: Integrates directly into Azure DevOps Pipelines for automated tasks.
 
@@ -22,6 +23,8 @@ Once the extension is installed, you can use it in your Azure DevOps pipelines b
   - task: CloudsmithCliInstallAndAuthenticate@0
     inputs:
       cliVersion: '1.3.1'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
+      oidcAuthOnly: false   # Set to true to skip installation and authenticate only via OIDC
+      pipInstall: false     # Set to true to install via pip instead of zipapp
       authMethod: 'apiKey' # Choose 'apiKey' for API Key authentication or 'oidc' for OIDC authentication
       apiKey: '$(CLOUDSMITH_API_KEY)'  # Only required if using 'apiKey' authentication
       clientId: '$(YOUR_CLIENT_ID)' # Required if authMethod is set to 'oidc'. This is the Client ID from your Azure AD application used for OIDC authentication.
@@ -61,6 +64,7 @@ There are two supported authentication methods: **API Key** and **OIDC**. You ne
    oidcNamespace: '$(your-namespace)'
    oidcServiceSlug: '$(your-service-slug)'
    ```
+   You can also use `oidcAuthOnly: true` if you only need authentication and not CLI installation.
 
 ## Contributing
 
