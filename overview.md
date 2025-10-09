@@ -47,12 +47,8 @@ jobs:
         pipInstall: false     # Set to true to install via pip instead of zipapp
         authMethod: 'apiKey' # Choose 'apiKey' for API Key authentication or 'oidc' for OIDC authentication
         apiKey: '$(CLOUDSMITH_API_KEY)'  # Only required if using 'apiKey' authentication
-        clientId: '$(YOUR_CLIENT_ID)' # Required if authMethod is set to 'oidc'. This is the Client ID from your Azure AD application used for OIDC authentication.
-        clientSecret: '$(YOUR_CLIENT_SECRET)' # Required if authMethod is set to 'oidc'. This is the Client Secret associated with the Azure AD application.
-        appIdUri: '$(YOUR_APP_ID_URI)'  # Required if authMethod is set to 'oidc'. This is the Application ID URI of your Azure AD application. Make sure to include the full URI.
-        tenantId: '$(YOUR_TENANT_ID)'  # Required if authMethod is set to 'oidc'. This is the Tenant ID for your Azure AD, which identifies your Azure AD instance.
-        oidcNamespace: '$(your-namespace)'  # Only required if using OIDC authentication
-        oidcServiceSlug: '$(your-service-slug)'  # Optional: Provide if needed for OIDC authentication
+        oidcNamespace: '$(your-namespace)'  # Required if authMethod is set to 'oidc'.
+        oidcServiceSlug: '$(your-service-slug)'  # Required if authMethod is set to 'oidc'.
 
 
     # Example Cloudsmith push
