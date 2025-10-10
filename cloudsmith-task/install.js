@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch').default;
+const axios = require('axios');
 const tl = require('azure-pipelines-task-lib/task');
 const os = require('os');
 const { exec } = require('child_process');
@@ -17,25 +17,35 @@ const EXECUTABLE_PATH = os.platform() === 'win32'
 
 // Helper function to download a file and set permissions
 async function downloadFile(url, dest) {
-  return new Promise((resolve, reject) => {
+  try {
     console.log(`Downloading Cloudsmith CLI from ${url}...`);
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) {
-          reject(new Error(`Failed to fetch ${url}: ${res.statusText}`));
-        } else {
-          const fileStream = fs.createWriteStream(dest);
-          res.body.pipe(fileStream);
-          res.body.on('error', reject);
-          fileStream.on('finish', resolve);
+    
+    const response = await axios({
+      method: 'GET',
+      url: url,
+      responseType: 'stream',
+      headers: {
+        'User-Agent': 'Cloudsmith-ADO-Extension/1.1.0'
+      }
+    });
+    
+    const fileStream = fs.createWriteStream(dest);
+    response.data.pipe(fileStream);
+    
+    return new Promise((resolve, reject) => {
+      fileStream.on('finish', () => {
+        // Set executable permissions on non-Windows platforms
+        if (os.platform() !== 'win32') {
+          fs.chmodSync(dest, '755');
         }
-      })
-      .catch(reject);
-  }).then(() => {
-    if (os.platform() !== 'win32') {
-      fs.chmodSync(dest, '755'); // Make executable on non-Windows platforms
-    }
-  });
+        resolve();
+      });
+      fileStream.on('error', reject);
+      response.data.on('error', reject);
+    });
+  } catch (error) {
+    throw new Error(`Failed to download ${url}: ${error.message}`);
+  }
 }
 
 // Move the cloudsmith-cli.pyz file to the correct location and create a batch file for Windows

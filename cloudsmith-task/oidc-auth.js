@@ -1,42 +1,56 @@
 const axios = require('axios');
 const tl = require('azure-pipelines-task-lib/task');
 
-/**
- * Function to authenticate with Cloudsmith using OIDC and validate the token.
- * 
- * @param {string} clientId - The Client ID from Azure AD.
- * @param {string} clientSecret - The Client Secret from Azure AD.
- * @param {string} appIdUri - scope of the Azure Entra Applcation ID URI
- * @param {string} tenantId - The Tenant ID from Azure AD.
- * @param {string} orgName - The organization name for OIDC.
- * @param {string} serviceAccountSlug - The service account slug for OIDC.
- */
-async function authenticateWithOIDC(clientId, clientSecret, appIdUri, tenantId, orgName, serviceAccountSlug) {
-  try {
-    console.log('Generating OIDC token from Azure...');
+// Constants
+const AZURE_DEVOPS_API_VERSION = '7.1';
+const OIDC_AUDIENCE = 'cloudsmith';
 
+/**
+ * Function to authenticate with Cloudsmith using Azure DevOps native OIDC token.
+ * 
+ * @param {string} orgName - The Cloudsmith organization name for OIDC.
+ * @param {string} serviceAccountSlug - The service account slug for OIDC (optional).
+ */
+async function authenticateWithOIDC(orgName, serviceAccountSlug) {
+  try {
+    console.log('Using Azure DevOps OIDC token...');
+
+    // Get the Azure DevOps system variables
+    const oidcRequestUri = tl.getVariable('System.OidcRequestUri');
+    const accessToken = tl.getVariable('System.AccessToken');
+
+    if (!oidcRequestUri || !accessToken) {
+      throw new Error('Azure DevOps OIDC not available. Enable "Allow scripts to access the OAuth token" in Agent Job settings.');
+    }
+
+    console.log('Requesting OIDC token from Azure DevOps...');
+    
+    // Request the OIDC token from Azure DevOps using System.AccessToken
+    const oidcUrl = `${oidcRequestUri}?api-version=${AZURE_DEVOPS_API_VERSION}&audience=${OIDC_AUDIENCE}`;
     const tokenResponse = await axios.post(
-      `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
-      new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        scope: `${appIdUri}/.default`,
-        grant_type: 'client_credentials'
-      }),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      oidcUrl,
+      {},  // Empty body for POST request
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Length': '0'
+        }
+      }
     );
 
-    const azureToken = tokenResponse.data.access_token;
-    //console.log('OIDC Token retrieved successfully:', azureToken);  // Print OIDC token for debugging
+    const azureToken = tokenResponse.data.oidcToken;
+    if (!azureToken) {
+      throw new Error('Failed to obtain OIDC token from Azure DevOps');
+    }
+
+    console.log('Azure DevOps OIDC token obtained successfully');
 
     const payload = { oidc_token: azureToken };
     if (serviceAccountSlug) {
       payload.service_slug = serviceAccountSlug;
     }
 
-    console.log('Authenticating with Cloudsmith using OIDC...');
-    //console.log(`Request URL: https://api.cloudsmith.io/openid/${orgName}/`);
-    //console.log('Payload:', JSON.stringify(payload, null, 2));  // Print payload for debugging
+
 
     const response = await axios.post(
       `https://api.cloudsmith.io/openid/${orgName}/`,
@@ -53,12 +67,15 @@ async function authenticateWithOIDC(clientId, clientSecret, appIdUri, tenantId, 
 
     process.env.CLOUDSMITH_API_KEY = token;
     tl.setVariable('CLOUDSMITH_API_KEY', token);
-    console.log('Ephemeral API token stored as CLOUDSMITH_API_KEY and ready to be used for next 90 Minutes');
+    console.log('Ephemeral API token stored as CLOUDSMITH_API_KEY and ready to be used for next 90 minutes');
 
     //await validateToken(token);
   } catch (error) {
     if (error.response) {
       console.error('Authentication error:', error.response.data);
+      if (error.response.status === 401 || error.response.status === 403) {
+        console.error('Hint: Ensure your pipeline has OIDC token permissions enabled and the Cloudsmith OIDC provider is configured with https://vstoken.dev.azure.com/{ORG_GUID}');
+      }
     }
     tl.setResult(tl.TaskResult.Failed, `OIDC authentication failed: ${error.message}`);
     throw error;

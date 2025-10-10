@@ -9,7 +9,7 @@
   "author": "Cloudsmith Ltd (support@Cloudsmith.io)",
   "version": {
     "Major": 1,
-    "Minor": 0,
+    "Minor": 1,
     "Patch": 0
   },
   "instanceNameFormat": "Install and Authenticate Cloudsmith CLI",
@@ -20,7 +20,7 @@
       "label": "OIDC Auth Only (skip installation)",
       "defaultValue": "false",
       "required": false,
-      "helpMarkDown": "When enabled, the task will only authenticate via OIDC and export CLOUDSMITH_API_KEY. It will NOT install or verify the CLI."
+      "helpMarkDown": "When enabled, the task will only authenticate via native Azure DevOps OIDC and export CLOUDSMITH_API_KEY. It will NOT install or verify the CLI."
     },
     {
       "name": "pipInstall",
@@ -51,47 +51,15 @@
       },
       "required": true,
       "visibleRule": "oidcAuthOnly = false",
-      "helpMarkDown": "Select your preferred authentication method. Use 'apiKey' for API Key-based authentication or 'oidc' for OpenID Connect (OIDC)."
-    },
-    {
-      "name": "clientId",
-      "type": "string",
-      "label": "Azure Client ID",
-      "required": false,
-      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
-      "helpMarkDown": "Provide the Azure Client ID for OIDC authentication."
-    },
-    {
-      "name": "clientSecret",
-      "type": "string",
-      "label": "Azure Client Secret",
-      "required": false,
-      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
-      "helpMarkDown": "Provide the Azure Client Secret for OIDC authentication."
-    },
-    {
-      "name": "appIdUri",
-      "type": "string",
-      "label": "Azure Application ID URI",
-      "required": false,
-      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
-      "helpMarkDown": "Provide the Azure Entra Application ID URI for scope defining."
-    },
-    {
-      "name": "tenantId",
-      "type": "string",
-      "label": "Azure Tenant ID",
-      "required": false,
-      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
-      "helpMarkDown": "Provide the Azure Tenant ID for OIDC authentication."
+      "helpMarkDown": "Select your preferred authentication method. Use 'apiKey' for API Key-based authentication or 'oidc' for OpenID Connect using Azure DevOps native OIDC tokens (no Azure AD app registration required)."
     },
     {
       "name": "oidcNamespace",
       "type": "string",
-      "label": "OIDC Namespace",
-      "required": false,
+      "label": "Cloudsmith Organization Name",
+      "required": true,
       "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
-      "helpMarkDown": "Provide the Cloudsmith organisation/namespace for OIDC."
+      "helpMarkDown": "Provide the Cloudsmith organization/namespace for OIDC authentication. This is required when using OIDC."
     },
     {
       "name": "oidcServiceSlug",
@@ -111,7 +79,7 @@
     }
   ],
   "execution": {
-    "Node16": {
+    "Node20": {
       "target": "main.js"
     },
     "Node18": {
