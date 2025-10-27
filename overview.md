@@ -23,7 +23,7 @@ With this extension, you can:
 1. Add this task to your Azure DevOps pipeline.
 2. Choose your authentication method (API Key or OIDC). 
    - If using **API Key** authentication, you must provide the `apiKey`.
-   - If using **OIDC** authentication, you must provide the `clientId`, `clientSecret`, `appIdUri`, `tenantId`, `oidcNamespace` and `oidcServiceSlug`.
+   - If using **OIDC** authentication, you must provide the  `oidcNamespace` and `oidcServiceSlug`.
    - If using **OIDC Auth Only** (`oidcAuthOnly`), the task will skip installing the CLI and only perform OIDC authentication.
 3. Optionally, specify the Cloudsmith CLI version you want to install.
    - If using **pipInstall**, the CLI will be installed from PyPI via pip. You can still specify a version with `cliVersion`.
@@ -40,7 +40,7 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
     # Install and Authenticate with Cloudsmith CLI
-    - task: CloudsmithCliInstallAndAuthenticate
+    - task: CloudsmithCliSetupAndAuthenticate
       inputs:
         cliVersion: '1.3.1'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
         oidcAuthOnly: false   # Set to true to skip installation and authenticate only via OIDC

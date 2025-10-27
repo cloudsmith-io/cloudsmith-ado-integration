@@ -10,7 +10,7 @@
   "version": {
     "Major": 1,
     "Minor": 1,
-    "Patch": 0
+    "Patch": 1
   },
   "instanceNameFormat": "Install and Authenticate Cloudsmith CLI",
   "inputs": [
@@ -83,6 +83,9 @@
       "target": "main.js"
     },
     "Node18": {
+      "target": "main.js"
+    },
+    "Node16": {
       "target": "main.js"
     }
   }

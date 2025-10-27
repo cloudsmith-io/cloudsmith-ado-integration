@@ -5,6 +5,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.1.1] - 2025-10-27
+### 🔧 Fixed
+- **Node 16 Support**  
+  Added Node 16 execution handler to improve compatibility with older Azure DevOps agent environments.  
+  Extension now supports Node 16, 18, and 20 for maximum agent compatibility.  
+
+---
+
 ## [1.1.0] - 2025-10-09
 ### 🚀 Enhanced
 - **Native Azure DevOps OIDC Support**  
