@@ -20,7 +20,7 @@ Once the extension is installed, you can use it in your Azure DevOps pipelines b
     vmImage: 'ubuntu-latest' #Modify Accordingly
   steps:
   # Install and Authenticate with Cloudsmith CLI
-  - task: CloudsmithCliInstallAndAuthenticate@0
+  - task: CloudsmithCliSetupAndAuthenticate
     inputs:
       cliVersion: '1.8.4'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
       oidcAuthOnly: false   # Set to true to skip installation and authenticate only via OIDC
