@@ -5,15 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.1.1] - 2025-10-27
-### 🔧 Fixed
-- **Node 16 Support**  
-  Added Node 16 execution handler to improve compatibility with older Azure DevOps agent environments.  
-  Extension now supports Node 16, 18, and 20 for maximum agent compatibility.  
-
----
-
-## [1.1.0] - 2025-10-09
+## [1.2.0] - 2025-11-12
 ### 🚀 Enhanced
 - **Native Azure DevOps OIDC Support**  
   Simplified OIDC authentication by using Azure DevOps' built-in OIDC tokens (`System.OidcRequestUri`).  
@@ -33,6 +25,21 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - **Enhanced Security Model**  
   Uses short-lived, automatically managed Azure DevOps OIDC tokens.  
   Leverages pipeline context claims for improved authentication security.  
+
+---
+
+## [1.1.2] - 2025-11-12
+### 🔧 Fixed
+- **Backwards Support**  
+  Downgrading to support the Entra OIDC method.
+
+---
+
+## [1.1.1] - 2025-10-27
+### 🔧 Fixed
+- **Node 16 Support**  
+  Added Node 16 execution handler to improve compatibility with older Azure DevOps agent environments.  
+  Extension now supports Node 16, 18, and 20 for maximum agent compatibility.  
 
 ---
 
