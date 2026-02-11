@@ -4,7 +4,7 @@
   "description": "Azure DevOps Extension to install and authenticate Cloudsmith CLI.",
   "main": "main.js",
   "dependencies": {
-    "axios": "^1.7.7",
+    "axios": "^1.13.5",
     "azure-pipelines-task-lib": "^4.17.3"
   },
   "devDependencies": {
