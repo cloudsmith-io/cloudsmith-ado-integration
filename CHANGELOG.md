@@ -17,7 +17,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### ✂️ Removed
 - **Dropped Node 16 execution handler**
-  Removed the end-of-life Node 16 fallback. The task now requires Azure DevOps agents that support the Node 20 runtime (agent v3.220+).
+  Removed the end-of-life Node 16 fallback. The task now requires Azure DevOps agents that support the Node 20 and Node 18 runtime (agent v3.220+). 
 
 ---
 
@@ -85,6 +85,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-[0.0.1]: https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate
-[1.0.0]: https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate
-[1.1.0]: https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate
+[1.2.1]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.2.1
+[1.2.0]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.2.0
+[1.1.2]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.1.2
+[1.1.1]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.1.1
+[1.1.0]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.1.0
