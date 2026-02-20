@@ -5,6 +5,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.1] - 2026-02-20
+### 🛡️ Security
+- **Updated axios dependency**
+  Bumped axios from `^1.7.7` to `^1.13.5` to address a security vulnerability flagged by Dependabot.
+
+### 🔧 Changed
+- **Fixed Node.js execution handler**
+  Corrected the Node 20 execution handler from `Node20` to `Node20_1` (the valid Azure DevOps handler name).
+  Modern agents now correctly use Node 20 instead of silently falling back to Node 16.
+
+### ✂️ Removed
+- **Dropped Node 16 execution handler**
+  Removed the end-of-life Node 16 fallback. The task now requires Azure DevOps agents that support the Node 20 and Node 18 runtime (agent v3.220+). 
+
+---
+
 ## [1.2.0] - 2025-11-12
 ### 🚀 Enhanced
 - **Native Azure DevOps OIDC Support**  
@@ -69,6 +85,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-[0.0.1]: https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate
-[1.0.0]: https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate
-[1.1.0]: https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate
+[1.2.1]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.2.1
+[1.2.0]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.2.0
+[1.1.2]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.1.2
+[1.1.1]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.1.1
+[1.1.0]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.1.0
