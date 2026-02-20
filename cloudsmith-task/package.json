@@ -1,10 +1,10 @@
 {
-  "name": "cloudsmith-pipeline-extension",
-  "version": "0.0.1",
-  "description": "Azure DevOps Extension to install and authenticate Cloudsmith CLI.",
+  "name": "cloudsmith-ado-extension",
+  "version": "1.2.1",
+  "description": "Installs the Cloudsmith CLI and authenticates using API Key or OIDC.",
   "main": "main.js",
   "dependencies": {
-    "axios": "^1.7.7",
+    "axios": "^1.13.5",
     "azure-pipelines-task-lib": "^4.17.3"
   },
   "devDependencies": {
