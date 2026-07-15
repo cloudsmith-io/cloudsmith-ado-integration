@@ -2,87 +2,103 @@
   "id": "06C63887-BA6C-4F36-8BB5-34A817634C29",
   "name": "CloudsmithCliSetupAndAuthenticate",
   "friendlyName": "Cloudsmith CLI Setup & Authenticate",
-  "description": "Installs the Cloudsmith CLI and authenticates using API Key or OIDC.",
-  "helpMarkDown": "Use this task to install and authenticate the Cloudsmith CLI during your Azure DevOps pipeline. For issues, contact: support@Cloudsmith.io",
+  "description": "Installs the standalone Cloudsmith CLI and configures API key or Azure DevOps OIDC authentication.",
+  "helpMarkDown": "For OIDC, map Azure DevOps' short-lived $(System.AccessToken) job token as SYSTEM_ACCESSTOKEN in the task environment. This is not a user-managed PAT. For issues, contact: support@cloudsmith.io",
   "category": "Utility",
   "visibility": ["Build", "Release"],
-  "author": "Cloudsmith Ltd (support@Cloudsmith.io)",
+  "author": "Cloudsmith Ltd (support@cloudsmith.io)",
   "version": {
-    "Major": 1,
-    "Minor": 2,
-    "Patch": 1
+    "Major": 2,
+    "Minor": 0,
+    "Patch": 0
   },
-  "instanceNameFormat": "Install and Authenticate Cloudsmith CLI",
+  "minimumAgentVersion": "3.232.1",
+  "instanceNameFormat": "Set up Cloudsmith CLI $(cliVersion)",
   "inputs": [
-    {
-      "name": "oidcAuthOnly",
-      "type": "boolean",
-      "label": "OIDC Auth Only (skip installation)",
-      "defaultValue": "false",
-      "required": false,
-      "helpMarkDown": "When enabled, the task will only authenticate via native Azure DevOps OIDC and export CLOUDSMITH_API_KEY. It will NOT install or verify the CLI."
-    },
-    {
-      "name": "pipInstall",
-      "type": "boolean",
-      "label": "Install via pip instead of zip-app",
-      "defaultValue": "false",
-      "required": false,
-      "visibleRule": "oidcAuthOnly = false",
-      "helpMarkDown": "Enable to install Cloudsmith CLI using pip instead of the zipapp."
-    },
     {
       "name": "cliVersion",
       "type": "string",
-      "label": "Cloudsmith CLI Version",
+      "label": "Cloudsmith CLI version",
+      "defaultValue": "latest",
+      "required": false,
+      "helpMarkDown": "CLI version to install (for example '1.20.0'), or 'latest'. Pin a version for reproducible pipelines."
+    },
+    {
+      "name": "installDirectory",
+      "type": "string",
+      "label": "Installation directory",
       "defaultValue": "",
       "required": false,
-      "visibleRule": "oidcAuthOnly = false",
-      "helpMarkDown": "Specify the version of Cloudsmith CLI to install (e.g., '0.25.0'). Leave empty to install the latest version."
+      "helpMarkDown": "Root directory for versioned CLI installations. Defaults to 'cloudsmith-cli' under the agent tools directory."
     },
     {
       "name": "authMethod",
-      "type": "string",
-      "label": "Authentication Method",
+      "type": "pickList",
+      "label": "Authentication method",
       "defaultValue": "apiKey",
-      "options": {
-        "apiKey": "API Key",
-        "oidc": "OIDC"
-      },
       "required": true,
-      "visibleRule": "oidcAuthOnly = false",
-      "helpMarkDown": "Select your preferred authentication method. Use 'apiKey' for API Key-based authentication or 'oidc' for OpenID Connect using Azure DevOps native OIDC tokens (no Azure AD app registration required)."
+      "options": {
+        "apiKey": "Cloudsmith API key",
+        "oidc": "Azure DevOps OIDC"
+      },
+      "helpMarkDown": "'apiKey' exports a secret CLOUDSMITH_API_KEY variable. 'oidc' configures the CLI to exchange the Azure DevOps OIDC token itself; it requires mapping SYSTEM_ACCESSTOKEN to $(System.AccessToken)."
     },
     {
       "name": "oidcNamespace",
       "type": "string",
-      "label": "Cloudsmith Organization Name",
-      "required": true,
-      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
-      "helpMarkDown": "Provide the Cloudsmith organization/namespace for OIDC authentication. This is required when using OIDC."
+      "label": "Cloudsmith organization",
+      "defaultValue": "",
+      "required": false,
+      "visibleRule": "authMethod = oidc",
+      "helpMarkDown": "Cloudsmith organization (namespace) to authenticate against. Required for OIDC."
     },
     {
       "name": "oidcServiceSlug",
       "type": "string",
-      "label": "OIDC Service Account Slug",
+      "label": "Cloudsmith service account slug",
+      "defaultValue": "",
       "required": false,
-      "visibleRule": "oidcAuthOnly = true || authMethod = oidc",
-      "helpMarkDown": "Provide the Cloudsmith service account slug for OIDC."
+      "visibleRule": "authMethod = oidc",
+      "helpMarkDown": "Cloudsmith service account slug to authenticate as. Required for OIDC."
     },
     {
       "name": "apiKey",
       "type": "string",
-      "label": "Cloudsmith API Key",
+      "label": "Cloudsmith API key",
+      "defaultValue": "",
       "required": false,
-      "visibleRule": "authMethod = apiKey && oidcAuthOnly = false",
-      "helpMarkDown": "Provide the Cloudsmith API key if API Key authentication is selected."
+      "visibleRule": "authMethod = apiKey",
+      "helpMarkDown": "Cloudsmith API key. Store it in a secret pipeline variable, for example $(CLOUDSMITH_API_KEY)."
+    },
+    {
+      "name": "verifyAuth",
+      "type": "boolean",
+      "label": "Verify authentication",
+      "defaultValue": "false",
+      "required": false,
+      "helpMarkDown": "Run 'cloudsmith whoami' after installation to verify authentication."
+    }
+  ],
+  "outputVariables": [
+    {
+      "name": "cliVersion",
+      "description": "Installed CLI version."
+    },
+    {
+      "name": "target",
+      "description": "Resolved platform target, for example linux-x86_64-gnu."
+    },
+    {
+      "name": "cliPath",
+      "description": "Absolute path to the cloudsmith executable."
+    },
+    {
+      "name": "binDirectory",
+      "description": "Directory containing the cloudsmith executable (prepended to PATH)."
     }
   ],
   "execution": {
     "Node20_1": {
-      "target": "main.js"
-    },
-    "Node18": {
       "target": "main.js"
     }
   }

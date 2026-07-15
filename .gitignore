@@ -16,3 +16,6 @@ temp/
 .DS_Store
 Thumbs.db
 
+
+# azure-pipelines-task-lib local run artifact
+.taskkey

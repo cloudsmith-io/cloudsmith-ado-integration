@@ -1,71 +1,232 @@
-# Cloudsmith CLI Install & Authenticate Task for Azure DevOps
+# Cloudsmith CLI for Azure DevOps
 
-This Azure DevOps extension provides a task for installing the Cloudsmith CLI and authenticating with Cloudsmith using API Key or OpenID Connect (OIDC). This task integrates seamlessly into your Azure DevOps pipelines, making it easier to install the Cloudsmith CLI and authenticate for your package management tasks.
+[![Test status](https://github.com/cloudsmith-io/cloudsmith-ado-integration/actions/workflows/ci.yml/badge.svg)](https://github.com/cloudsmith-io/cloudsmith-ado-integration/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/cloudsmith-io/cloudsmith-ado-integration)](https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases)
+[![License](https://img.shields.io/github/license/cloudsmith-io/cloudsmith-ado-integration)](LICENSE)
 
-## Features
+Install the standalone [Cloudsmith CLI](https://github.com/cloudsmith-io/cloudsmith-cli), add it to `PATH`, and configure authentication for the rest of an Azure Pipelines job. The installed CLI does not require Python or pip on the agent.
 
-- **Install Cloudsmith CLI**: Install the latest or a specific version of the Cloudsmith CLI.
-- **Flexible installation**: Choose installation method (zipapp or pip) and specify a version, or default to the latest.
-- **Authenticate with API Key or OIDC**: Securely authenticate with Cloudsmith using API keys or Azure DevOps native OIDC tokens (no Azure AD setup required).
-- **Seamless Integration**: Integrates directly into Azure DevOps Pipelines for automated tasks.
+[Quick start](#quick-start) · [Configuration](#configuration) · [Outputs](#outputs) · [Migration guide](#migrating-from-1-to-2) · [Contributing](#contributing)
 
-## Usage in Azure DevOps Pipelines
+## At a glance
 
-Once the extension is installed, you can use it in your Azure DevOps pipelines by adding it to your pipeline YAML. Below is an example:
+| Capability | Support |
+| --- | --- |
+| Authentication | OpenID Connect (OIDC) or API key |
+| Agents | Linux, macOS, and Windows |
+| Architectures | x86-64, plus Linux and macOS ARM64 |
+| CLI dependencies | None; the task installs the standalone CLI binary |
+| Version selection | Latest release or a specific CLI version |
 
-   ```bash
-   jobs:
-    - job: InstallCloudsmithAndAuthenticate
-  pool:
-    vmImage: 'ubuntu-latest' #Modify Accordingly
-  steps:
-  # Install and Authenticate with Cloudsmith CLI
-  - task: CloudsmithCliSetupAndAuthenticate
+## Quick start
+
+### Authenticate with OIDC
+
+OIDC is the recommended option for CI/CD because it uses short-lived credentials instead of a stored API key. Configure a [Cloudsmith OIDC provider](https://help.cloudsmith.io/docs/openid-connect) for your Azure DevOps organization with the audience `api://AzureADTokenExchange` before using this example.
+
+> [!IMPORTANT]
+> Map `SYSTEM_ACCESSTOKEN` on the setup task and every later step that runs an authenticated `cloudsmith` command. `System.AccessToken` is the short-lived, job-scoped OAuth token created by Azure DevOps; it is not a personal access token (PAT) that you create or store. Azure Pipelines does not automatically expose secret variables to task processes.
+
+```yaml
+steps:
+  - task: CloudsmithCliSetupAndAuthenticate@2
+    displayName: Set up Cloudsmith CLI
     inputs:
-      cliVersion: '1.8.4'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
-      oidcAuthOnly: false   # Set to true to skip installation and authenticate only via OIDC
-      pipInstall: false     # Set to true to install via pip instead of zipapp
-      authMethod: 'apiKey' # Choose 'apiKey' for API Key authentication or 'oidc' for native Azure DevOps OIDC authentication
-      apiKey: '$(CLOUDSMITH_API_KEY)'  # Only required if using 'apiKey' authentication
-      oidcNamespace: 'your-org-name'  # Required if using OIDC authentication - your Cloudsmith organization name
-      oidcServiceSlug: 'your-service-slug'  # Optional: Cloudsmith service account slug for OIDC authentication
+      authMethod: oidc
+      oidcNamespace: YOUR-NAMESPACE
+      oidcServiceSlug: YOUR-SERVICE-ACCOUNT
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-  # Push a package to Cloudsmith
-  - script: |
-      cloudsmith whoami  # Verifies the authentication is successful
-      cloudsmith push raw $(CLOUDSMITH_ORG)/$(CLOUDSMITH_REPO) my-package.zip
-    displayName: 'Push package to Cloudsmith'
-   ```
+  - script: cloudsmith whoami
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+```
+
+### Authenticate with an API key
+
+Store the API key as a [secret pipeline variable](https://learn.microsoft.com/azure/devops/pipelines/process/set-secret-variables), then pass it to the task. For automated pipelines, use a [Cloudsmith service account](https://help.cloudsmith.io/docs/service-accounts) rather than a personal API key.
+
+```yaml
+steps:
+  - task: CloudsmithCliSetupAndAuthenticate@2
+    displayName: Set up Cloudsmith CLI
+    inputs:
+      authMethod: apiKey
+      apiKey: $(MY_CLOUDSMITH_API_KEY)
+
+  - script: cloudsmith whoami
+    env:
+      CLOUDSMITH_API_KEY: $(CLOUDSMITH_API_KEY)
+```
+
+Personal API keys are available from [Cloudsmith API settings](https://cloudsmith.io/user/settings/api/).
 
 ## Authentication
-There are two supported authentication methods: **API Key** and **OIDC**. You need to configure authentication before interacting with Cloudsmith.
 
-**API Key Authentication**:
-   To use API Key authentication, simply provide your Cloudsmith API key. You can authenticate with Cloudsmith using your API Key by setting it as an environment variable or directly in the pipeline. To keep your API Key secure, we recommend setting it as an environment variable in Azure DevOps.
+Choose one of the following authentication methods:
 
-   ```yaml
-   authMethod: 'apiKey'
-   apiKey: '$(CLOUDSMITH_API_KEY)'
-   ```
+| Method | Inputs | Credential handling | Best suited to |
+| --- | --- | --- | --- |
+| OIDC | `authMethod: oidc`, `oidcNamespace`, and `oidcServiceSlug` | The CLI exchanges the mapped Azure DevOps token on its first authenticated command | CI/CD pipelines |
+| API key | `authMethod: apiKey` and `apiKey` | The task masks and exports the key as a secret pipeline variable | Pipelines that cannot use OIDC |
 
-**OIDC Authentication**:
-   To authenticate via OIDC, ensure that oidcNamespace, and oidcServiceSlug are correctly set as inputs or environment variables in the pipeline.
-   
-   ```yaml
-   authMethod: 'oidc'
-   oidcNamespace: '$(your-namespace)'
-   oidcServiceSlug: '$(your-service-slug)'
-   ```
-   You can also use `oidcAuthOnly: true` if you only need authentication and not CLI installation.
+With OIDC, the task exports the service account context needed by the CLI. The Cloudsmith access token is requested only when the CLI first needs to authenticate and is not exposed as a task output.
+
+```mermaid
+flowchart LR
+    A[Setup task] -->|Installs CLI and exports OIDC settings| B[Cloudsmith CLI command]
+    B -->|Uses SYSTEM_ACCESSTOKEN| C[Azure DevOps OIDC]
+    C -->|Exchanges identity| D[Cloudsmith]
+```
+
+Set `verifyAuth: true` to run `cloudsmith whoami` during setup and fail early if authentication is not configured correctly.
+
+## Configuration
+
+Set `authMethod` to `oidc` or `apiKey`, then provide the inputs required by that method.
+
+### Installation inputs
+
+| Input | Description | Required | Default |
+| --- | --- | --- | --- |
+| `cliVersion` | CLI version to install, such as `1.20.0` | No | `latest` |
+| `installDirectory` | Root directory for versioned CLI installations | No | Agent tools directory |
+| `verifyAuth` | Run `cloudsmith whoami` after setup | No | `false` |
+
+### Authentication inputs
+
+| Input | Description | Required | Default |
+| --- | --- | --- | --- |
+| `authMethod` | Authentication method: `oidc` or `apiKey` | Yes | `apiKey` |
+| `apiKey` | Cloudsmith API key supplied through a secret pipeline variable | For API-key authentication | — |
+| `oidcNamespace` | Cloudsmith organization or namespace | For OIDC authentication | — |
+| `oidcServiceSlug` | Cloudsmith service account slug | For OIDC authentication | — |
+
+## Outputs
+
+Give the task a `name` to reference its output variables:
+
+```yaml
+steps:
+  - task: CloudsmithCliSetupAndAuthenticate@2
+    name: cloudsmithSetup
+    inputs:
+      authMethod: apiKey
+      apiKey: $(MY_CLOUDSMITH_API_KEY)
+
+  - script: echo "Installed Cloudsmith CLI $(cloudsmithSetup.cliVersion)"
+```
+
+| Output | Description |
+| --- | --- |
+| `cliVersion` | Resolved Cloudsmith CLI version |
+| `target` | Resolved binary target, such as `linux-x86_64-gnu` |
+| `cliPath` | Absolute path to the Cloudsmith CLI executable |
+| `binDirectory` | Directory added to `PATH` for later steps |
+
+## Environment variables
+
+The task configures later steps through Azure Pipelines variables. Secret variables must be mapped explicitly into the environment of each script or task that uses them.
+
+| Authentication method | Variable | Handling |
+| --- | --- | --- |
+| OIDC | `CLOUDSMITH_ORG` | Exported by the setup task |
+| OIDC | `CLOUDSMITH_SERVICE_SLUG` | Exported by the setup task |
+| OIDC | `SYSTEM_ACCESSTOKEN` | Map the short-lived Azure DevOps job token from `$(System.AccessToken)` on setup and authenticated CLI steps |
+| API key | `CLOUDSMITH_API_KEY` | Exported as a masked, secret pipeline variable; map it on later CLI steps |
+
+## Publish a package
+
+The following pipeline installs the CLI with OIDC authentication and publishes a raw package:
+
+```yaml
+steps:
+  - task: CloudsmithCliSetupAndAuthenticate@2
+    displayName: Set up Cloudsmith CLI
+    inputs:
+      authMethod: oidc
+      oidcNamespace: YOUR-NAMESPACE
+      oidcServiceSlug: YOUR-SERVICE-ACCOUNT
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  - script: cloudsmith push raw YOUR-NAMESPACE/YOUR-REPOSITORY my-package.zip
+    displayName: Publish package
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+```
+
+See [Supported Formats](https://help.cloudsmith.io/docs/supported-formats) for the upload command and options for each package format.
+
+## Migrating from @1 to @2
+
+Version `@2` installs the standalone CLI instead of the Python package. Version `@1` remains available for existing pipelines and is maintained on the `v1` branch.
+
+Pipelines reference the task major explicitly, so existing `CloudsmithCliSetupAndAuthenticate@1` usage does not move to `@2` automatically. Upgrade only after reviewing the changes below.
+
+> [!IMPORTANT]
+> Version `@2` changes the OIDC audience and requires `SYSTEM_ACCESSTOKEN` to be mapped into every authenticated CLI step. Update the Cloudsmith OIDC provider and pipeline environment mappings before changing the task version.
+
+<details>
+<summary><strong>View removed inputs and migration steps</strong></summary>
+
+### Installation changes
+
+| In `@1` | In `@2` | Migration |
+| --- | --- | --- |
+| Python zipapp or pip installation | Standalone binary under the agent tools directory | Remove Python, pip, and elevated-install setup used only by this task. |
+| `pipInstall` input | Removed | Delete the input. |
+| `oidcAuthOnly` input | Removed | Delete the input. The task always installs the CLI. |
+
+### Authentication changes
+
+| In `@1` | In `@2` | Migration |
+| --- | --- | --- |
+| The task exchanges the OIDC token and exports `CLOUDSMITH_API_KEY` | The CLI exchanges the token on first use | Use the CLI for authenticated operations, or perform a separate exchange if another tool needs the raw token. |
+| OIDC audience `cloudsmith` | OIDC audience `api://AzureADTokenExchange` | Update the audience in the Cloudsmith OIDC provider. |
+| No explicit access-token mapping for OIDC | `SYSTEM_ACCESSTOKEN` is required in authenticated steps | Add the `env` mapping shown in the [OIDC example](#authenticate-with-oidc). |
+| `oidcServiceSlug` was optional | `oidcServiceSlug` is required | Add the service account slug to the task inputs. |
+| API key exported as a regular variable | API key exported as a secret variable | Map `CLOUDSMITH_API_KEY` into later steps that use it. |
+
+### Why the OIDC flow changed
+
+The standalone CLI owns the token exchange in `@2`. The task supplies the Cloudsmith organization and service account context, while the CLI requests and exchanges the short-lived Azure DevOps token when an authenticated command runs. This keeps token handling within the CLI.
+
+</details>
 
 ## Contributing
 
-If you’d like to contribute to this project, feel free to submit a pull request. Please ensure your code adheres to the project’s coding guidelines and includes necessary documentation. You can check contributing guilde [here](https://github.com/cloudsmith-io/cloudsmith-ado-integration/blob/main/README.md).
+See the [contribution guide](CONTRIBUTING.md) for the repository layout, validation commands, and pull request process.
 
-## License
+<details>
+<summary><strong>View local development commands</strong></summary>
 
-This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+Install dependencies and run the unit tests from the task directory:
+
+```bash
+cd cloudsmith-task
+npm ci
+node --check main.js
+npm test
+```
+
+Package the extension from the repository root:
+
+```bash
+npx tfx-cli extension create \
+  --manifest-globs vss-extension.json \
+  --output-path dist/
+```
+
+The scripts in `cloudsmith-task/installer/` are synchronized with the Cloudsmith CLI installer project. Do not edit them directly; `installer/VERSION` records the installer release.
+
+</details>
 
 ## Support
 
-If you encounter any issues, feel free to open an issue in this repository or contact [support@cloudsmith.io](mailto:support@cloudsmith.io).
+For help, [open a GitHub issue](https://github.com/cloudsmith-io/cloudsmith-ado-integration/issues) or contact [Cloudsmith Support](mailto:support@cloudsmith.io).
+
+## License
+
+This project is available under the [Apache License 2.0](LICENSE).

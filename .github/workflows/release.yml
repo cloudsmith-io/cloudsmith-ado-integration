@@ -8,9 +8,6 @@ on:
 permissions:
   contents: write
 
-env:
-  EXTENSION_NAME: 'CloudsmithCliSetupAndAuthenticate'
-
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -24,12 +21,17 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
-        cache-dependency-path: 'cloudsmith-task/package.json'
+        cache-dependency-path: 'cloudsmith-task/package-lock.json'
         
     - name: Install dependencies
       run: |
         cd cloudsmith-task
         npm ci
+
+    - name: Run tests and validate the public task contract
+      run: |
+        cd cloudsmith-task
+        npm test
         
     - name: Install TFX CLI
       run: npm install -g tfx-cli
@@ -44,11 +46,25 @@ jobs:
     - name: Validate version matches manifest
       run: |
         MANIFEST_VERSION=$(jq -r '.version' vss-extension.json)
-        if [ "$MANIFEST_VERSION" != "${{ steps.version.outputs.version }}" ]; then
-          echo "ERROR: Tag version (${{ steps.version.outputs.version }}) doesn't match manifest version ($MANIFEST_VERSION)"
-          exit 1
+        TASK_VERSION=$(jq -r '[.version.Major, .version.Minor, .version.Patch] | join(".")' cloudsmith-task/task.json)
+        PACKAGE_VERSION=$(jq -r '.version' cloudsmith-task/package.json)
+        TAG_VERSION=${{ steps.version.outputs.version }}
+        for version in "$MANIFEST_VERSION" "$TASK_VERSION" "$PACKAGE_VERSION"; do
+          if [ "$version" != "$TAG_VERSION" ]; then
+            echo "ERROR: Tag version ($TAG_VERSION), extension manifest ($MANIFEST_VERSION), task manifest ($TASK_VERSION), and package ($PACKAGE_VERSION) must match"
+            exit 1
+          fi
+        done
+        echo "Version validation passed: $TAG_VERSION"
+
+    - name: Verify the version 1 maintenance line
+      run: |
+        VERSION=${{ steps.version.outputs.version }}
+        MAJOR=${VERSION%%.*}
+        if [ "$MAJOR" -ge 2 ]; then
+          git ls-remote --exit-code --heads origin refs/heads/v1 >/dev/null
+          echo "The v1 maintenance branch is available for existing task users."
         fi
-        echo "Version validation passed: $MANIFEST_VERSION"
         
     - name: Build extension
       run: |
