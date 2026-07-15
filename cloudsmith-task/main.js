@@ -39,11 +39,15 @@ function parseInstallerOutput(output) {
   return values;
 }
 
-// Environment for child processes that don't need task inputs.
+// Auth variables the task manages. Child processes only receive them
+// explicitly (see verifyAuth), never by inheritance.
+const AUTH_ENV_VARS = ['CLOUDSMITH_API_KEY', 'SYSTEM_ACCESSTOKEN', 'SYSTEM_OIDCREQUESTURI'];
+
+// Environment for child processes: strips task inputs and auth variables.
 function envWithoutInputs() {
   const env = {};
   for (const [name, value] of Object.entries(process.env)) {
-    if (!name.startsWith('INPUT_')) {
+    if (!name.startsWith('INPUT_') && !AUTH_ENV_VARS.includes(name)) {
       env[name] = value;
     }
   }

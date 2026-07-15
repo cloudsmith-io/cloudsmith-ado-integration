@@ -267,13 +267,19 @@ function withSpawnSyncSpy(fn) {
   }
 }
 
-test('installer child env strips INPUT_ variables and the apiKey is masked first', async () => {
+test('installer child env strips INPUT_ and auth variables and the apiKey is masked first', async () => {
   process.env.INPUT_APIKEY = 'test-key';
+  process.env.CLOUDSMITH_API_KEY = 'ambient-key';
+  process.env.SYSTEM_ACCESSTOKEN = 'agent-token';
+  process.env.SYSTEM_OIDCREQUESTURI = 'https://dev.azure.com/org/_apis/oidctoken';
   await withSpawnSyncSpy(async (calls) => {
     await main.run(fixtureInstallerDir);
 
     assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Succeeded, mockTl.result.message);
     assert.strictEqual(calls[0].options.env.INPUT_APIKEY, undefined);
+    assert.strictEqual(calls[0].options.env.CLOUDSMITH_API_KEY, undefined);
+    assert.strictEqual(calls[0].options.env.SYSTEM_ACCESSTOKEN, undefined);
+    assert.strictEqual(calls[0].options.env.SYSTEM_OIDCREQUESTURI, undefined);
     assert.ok(calls[0].secretsAtCall.includes('test-key'), 'apiKey masked before the installer ran');
   });
 });
