@@ -4,8 +4,8 @@
   "description": "Installs the Cloudsmith CLI and authenticates using API Key or OIDC.",
   "main": "main.js",
   "dependencies": {
-    "axios": "^1.13.5",
-    "azure-pipelines-task-lib": "^4.17.3"
+    "axios": "^1.18.0",
+    "azure-pipelines-task-lib": "^5.278.0"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
