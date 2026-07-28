@@ -19,8 +19,7 @@ param(
     ),
     [string]$Target = $env:CLOUDSMITH_CLI_TARGET,
     [string]$OutputFile = $env:CLOUDSMITH_CLI_OUTPUT_FILE,
-    # TODO: revert to the production repository before release.
-    [string]$Repository = $(if ($env:CLOUDSMITH_CLI_REPOSITORY) { $env:CLOUDSMITH_CLI_REPOSITORY } else { "bart-demo-org-terraform/cli-binary-release-test" }),
+    [string]$Repository = $(if ($env:CLOUDSMITH_CLI_REPOSITORY) { $env:CLOUDSMITH_CLI_REPOSITORY } else { "cloudsmith/cli" }),
     [string]$ManifestUrl = $env:CLOUDSMITH_CLI_MANIFEST_URL,
     [switch]$Force
 )

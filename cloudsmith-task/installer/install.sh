@@ -10,8 +10,7 @@ PROGRAM="install.sh"
 # Where releases are downloaded from. Flags and CLOUDSMITH_CLI_* environment
 # variables override the defaults; --manifest-url bypasses URL construction.
 DOWNLOAD_BASE_URL="https://dl.cloudsmith.io/public"
-# TODO: revert to the production repository before release.
-DEFAULT_REPOSITORY="bart-demo-org-terraform/cli-binary-release-test"
+DEFAULT_REPOSITORY="cloudsmith/cli"
 MANIFEST_NAME_PREFIX="cloudsmith-cli-manifest"
 
 REPOSITORY="${CLOUDSMITH_CLI_REPOSITORY:-$DEFAULT_REPOSITORY}"
