@@ -9,15 +9,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20'
           cache: 'npm'
@@ -49,7 +56,7 @@ jobs:
 
       - name: Package extension
         run: |
-          npx tfx-cli extension create --manifest-globs vss-extension.json --output-path dist/
+          npx tfx-cli@0.23.4 extension create --manifest-globs vss-extension.json --output-path dist/
 
       - name: Verify VSIX contents
         run: |
@@ -61,13 +68,16 @@ jobs:
           unzip -p "$VSIX_FILE" cloudsmith-task/installer/install.ps1 | cmp - cloudsmith-task/installer/install.ps1
 
   test-windows:
+    name: Test (Windows)
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20'
           cache: 'npm'

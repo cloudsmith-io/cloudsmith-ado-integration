@@ -5,24 +5,31 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'  # Triggers only on semantic version tags like v1.1.0, v2.0.1, etc.
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-and-publish:
+    name: Build and publish
+    permissions:
+      contents: write # create the GitHub release
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-      
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        persist-credentials: false
+
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       with:
         node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'cloudsmith-task/package-lock.json'
-        
+        package-manager-cache: false
+
     - name: Install dependencies
       run: |
         cd cloudsmith-task
@@ -34,7 +41,7 @@ jobs:
         npm test
         
     - name: Install TFX CLI
-      run: npm install -g tfx-cli
+      run: npm install -g tfx-cli@0.23.4
       
     - name: Extract version from tag
       id: version
@@ -44,11 +51,12 @@ jobs:
         echo "Building version: $VERSION"
         
     - name: Validate version matches manifest
+      env:
+        TAG_VERSION: ${{ steps.version.outputs.version }}
       run: |
         MANIFEST_VERSION=$(jq -r '.version' vss-extension.json)
         TASK_VERSION=$(jq -r '[.version.Major, .version.Minor, .version.Patch] | join(".")' cloudsmith-task/task.json)
         PACKAGE_VERSION=$(jq -r '.version' cloudsmith-task/package.json)
-        TAG_VERSION=${{ steps.version.outputs.version }}
         for version in "$MANIFEST_VERSION" "$TASK_VERSION" "$PACKAGE_VERSION"; do
           if [ "$version" != "$TAG_VERSION" ]; then
             echo "ERROR: Tag version ($TAG_VERSION), extension manifest ($MANIFEST_VERSION), task manifest ($TASK_VERSION), and package ($PACKAGE_VERSION) must match"
@@ -58,8 +66,9 @@ jobs:
         echo "Version validation passed: $TAG_VERSION"
 
     - name: Verify the version 1 maintenance line
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
       run: |
-        VERSION=${{ steps.version.outputs.version }}
         MAJOR=${VERSION%%.*}
         if [ "$MAJOR" -ge 2 ]; then
           git ls-remote --exit-code --heads origin refs/heads/v1 >/dev/null
@@ -86,50 +95,59 @@ jobs:
         echo "VSIX file: $VSIX_FILENAME"
         
     - name: Publish to Azure DevOps Marketplace
+      env:
+        TFX_PUBLISHER: ${{ vars.AZURE_DEVOPS_PUBLISHER_ID }}
+        TFX_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
       run: |
         echo "Publishing extension to Azure DevOps Marketplace..."
         tfx extension publish \
           --manifest-globs vss-extension.json \
-          --publisher ${{ vars.AZURE_DEVOPS_PUBLISHER_ID }} \
-          --token ${{ secrets.AZURE_DEVOPS_PAT }}
-      env:
-        TFX_PUBLISHER: ${{ vars.AZURE_DEVOPS_PUBLISHER_ID }}
-        
+          --publisher "$TFX_PUBLISHER" \
+          --token "$TFX_TOKEN"
+
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+      env:
+        RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        VSIX_FILENAME: ${{ steps.vsix.outputs.vsix_filename }}
       with:
-        name: "Release v${{ steps.version.outputs.version }}"
+        name: "Release v${{ env.RELEASE_VERSION }}"
         tag_name: ${{ github.ref_name }}
         generate_release_notes: true
         files: ${{ steps.vsix.outputs.vsix_file }}
         body: |
-          ## 🚀 Azure DevOps Extension v${{ steps.version.outputs.version }}
-          
+          ## 🚀 Azure DevOps Extension v${{ env.RELEASE_VERSION }}
+
           ### 📦 Installation
-          
+
           **Recommended: Install from Azure DevOps Marketplace**
-          
+
           Install directly from the marketplace: [Cloudsmith CLI Setup & Authenticate](https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate)
-          
+
           **Alternative: Manual Installation (for self-hosted Azure DevOps Server)**
-          
+
           If you're using a self-hosted Azure DevOps Server, download and manually install:
-          1. Download the `${{ steps.vsix.outputs.vsix_filename }}` file from this release
-          2. Go to **Organization Settings** → **Extensions** → **Manage Extensions**  
+          1. Download the `${{ env.VSIX_FILENAME }}` file from this release
+          2. Go to **Organization Settings** → **Extensions** → **Manage Extensions**
           3. Click **"Upload new extension"** and upload the VSIX file
-          
+
           ### 📋 Changes
           See the [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for detailed changes.
-        
+
     - name: Summary
+      env:
+        RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        VSIX_FILENAME: ${{ steps.vsix.outputs.vsix_filename }}
+        REPOSITORY: ${{ github.repository }}
+        TAG_NAME: ${{ github.ref_name }}
       run: |
-        echo "## ✅ Release Complete! 🎉" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- **Version**: v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **VSIX File**: ${{ steps.vsix.outputs.vsix_filename }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Marketplace**: Published successfully" >> $GITHUB_STEP_SUMMARY
-        echo "- **GitHub Release**: Created with VSIX attachment" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
-        echo "- [Azure DevOps Marketplace](https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate)" >> $GITHUB_STEP_SUMMARY
-        echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
+        echo "## ✅ Release Complete! 🎉" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **Version**: v$RELEASE_VERSION" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **VSIX File**: $VSIX_FILENAME" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **Marketplace**: Published successfully" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **GitHub Release**: Created with VSIX attachment" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "### 🔗 Links" >> "$GITHUB_STEP_SUMMARY"
+        echo "- [Azure DevOps Marketplace](https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate)" >> "$GITHUB_STEP_SUMMARY"
+        echo "- [GitHub Release](https://github.com/$REPOSITORY/releases/tag/$TAG_NAME)" >> "$GITHUB_STEP_SUMMARY"
