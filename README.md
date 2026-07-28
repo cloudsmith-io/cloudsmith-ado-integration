@@ -1,6 +1,7 @@
 # Cloudsmith CLI for Azure DevOps
 
 [![Test status](https://github.com/cloudsmith-io/cloudsmith-ado-integration/actions/workflows/ci.yml/badge.svg)](https://github.com/cloudsmith-io/cloudsmith-ado-integration/actions/workflows/ci.yml)
+[![Azure DevOps Marketplace](https://img.shields.io/badge/Marketplace-Cloudsmith%20CLI%20Setup%20%26%20Authenticate-0078d7?logo=azuredevops&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate)
 [![Latest release](https://img.shields.io/github/v/release/cloudsmith-io/cloudsmith-ado-integration)](https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases)
 [![License](https://img.shields.io/github/license/cloudsmith-io/cloudsmith-ado-integration)](LICENSE)
 
@@ -22,7 +23,7 @@ Install the standalone [Cloudsmith CLI](https://github.com/cloudsmith-io/cloudsm
 
 ### Authenticate with OIDC
 
-OIDC is the recommended option for CI/CD because it uses short-lived credentials instead of a stored API key. Configure a [Cloudsmith OIDC provider](https://help.cloudsmith.io/docs/openid-connect) for your Azure DevOps organization with the audience `api://AzureADTokenExchange` before using this example.
+OIDC is the recommended option for CI/CD because it uses short-lived credentials instead of a stored API key. Configure a [Cloudsmith OIDC provider](https://docs.cloudsmith.com/authentication/openid-connect) for your Azure DevOps organization with the audience `api://AzureADTokenExchange` before using this example.
 
 > [!IMPORTANT]
 > Map `SYSTEM_ACCESSTOKEN` on the setup task and every later step that runs an authenticated `cloudsmith` command. `System.AccessToken` is the short-lived, job-scoped OAuth token created by Azure DevOps; it is not a personal access token (PAT) that you create or store. Azure Pipelines does not automatically expose secret variables to task processes.
@@ -45,7 +46,7 @@ steps:
 
 ### Authenticate with an API key
 
-Store the API key as a [secret pipeline variable](https://learn.microsoft.com/azure/devops/pipelines/process/set-secret-variables), then pass it to the task. For automated pipelines, use a [Cloudsmith service account](https://help.cloudsmith.io/docs/service-accounts) rather than a personal API key.
+Store the API key as a [secret pipeline variable](https://learn.microsoft.com/azure/devops/pipelines/process/set-secret-variables), then pass it to the task. For automated pipelines, use a [Cloudsmith service account](https://docs.cloudsmith.com/accounts-and-teams/service-accounts) rather than a personal API key.
 
 ```yaml
 steps:
@@ -157,7 +158,7 @@ steps:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 ```
 
-See [Supported Formats](https://help.cloudsmith.io/docs/supported-formats) for the upload command and options for each package format.
+See [Supported Formats](https://docs.cloudsmith.com/formats) for the upload command and options for each package format.
 
 ## Migrating from @1 to @2
 

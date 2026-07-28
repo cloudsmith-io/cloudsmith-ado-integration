@@ -1,6 +1,6 @@
 # Cloudsmith CLI Setup & Authenticate for Azure DevOps Pipelines
 
-This extension installs the standalone [Cloudsmith CLI](https://cloudsmith.com/) in your Azure DevOps pipelines and configures authentication with Cloudsmith. The CLI is a self-contained binary — no Python or pip required on the agent.
+This extension installs the standalone [Cloudsmith CLI](https://github.com/cloudsmith-io/cloudsmith-cli) in your Azure DevOps pipelines and configures authentication with Cloudsmith. The CLI is a self-contained binary — no Python or pip required on the agent.
 
 With this extension, you can:
 
@@ -13,7 +13,7 @@ With this extension, you can:
 1. Add the `CloudsmithCliSetupAndAuthenticate@2` task to your pipeline.
 2. Choose an authentication method:
    - **API key**: provide `apiKey` from a secret pipeline variable.
-   - **OIDC**: provide `oidcNamespace` and `oidcServiceSlug`, configure an [OIDC provider in Cloudsmith](https://help.cloudsmith.io/docs/openid-connect) with audience `api://AzureADTokenExchange`, and map `SYSTEM_ACCESSTOKEN: $(System.AccessToken)` in the step `env`.
+   - **OIDC**: provide `oidcNamespace` and `oidcServiceSlug`, configure an [OIDC provider in Cloudsmith](https://docs.cloudsmith.com/authentication/openid-connect) with audience `api://AzureADTokenExchange`, and map `SYSTEM_ACCESSTOKEN: $(System.AccessToken)` in the step `env`.
 3. Optionally pin `cliVersion` and enable `verifyAuth` to run `cloudsmith whoami`.
 
 ### Example: OIDC

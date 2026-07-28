@@ -2,6 +2,12 @@
   "name": "cloudsmith-ado-extension",
   "version": "2.0.0",
   "description": "Installs the standalone Cloudsmith CLI and configures API key or Azure DevOps OIDC authentication.",
+  "license": "Apache-2.0",
+  "author": "Cloudsmith Ltd (support@cloudsmith.io)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cloudsmith-io/cloudsmith-ado-integration.git"
+  },
   "main": "main.js",
   "dependencies": {
     "azure-pipelines-task-lib": "^4.17.3"
