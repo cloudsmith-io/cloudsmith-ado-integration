@@ -41,7 +41,7 @@ jobs:
         npm test
         
     - name: Install TFX CLI
-      run: npm install -g tfx-cli@0.23.4
+      run: npm install -g tfx-cli@0.23.4 # zizmor: ignore[adhoc-packages] version is pinned
       
     - name: Extract version from tag
       id: version
@@ -106,33 +106,32 @@ jobs:
           --token "$TFX_TOKEN"
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
       env:
+        GH_TOKEN: ${{ github.token }}
         RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        VSIX_FILE: ${{ steps.vsix.outputs.vsix_file }}
         VSIX_FILENAME: ${{ steps.vsix.outputs.vsix_filename }}
-      with:
-        name: "Release v${{ env.RELEASE_VERSION }}"
-        tag_name: ${{ github.ref_name }}
-        generate_release_notes: true
-        files: ${{ steps.vsix.outputs.vsix_file }}
-        body: |
-          ## 🚀 Azure DevOps Extension v${{ env.RELEASE_VERSION }}
-
-          ### 📦 Installation
-
-          **Recommended: Install from Azure DevOps Marketplace**
-
-          Install directly from the marketplace: [Cloudsmith CLI Setup & Authenticate](https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate)
-
-          **Alternative: Manual Installation (for self-hosted Azure DevOps Server)**
-
-          If you're using a self-hosted Azure DevOps Server, download and manually install:
-          1. Download the `${{ env.VSIX_FILENAME }}` file from this release
-          2. Go to **Organization Settings** → **Extensions** → **Manage Extensions**
-          3. Click **"Upload new extension"** and upload the VSIX file
-
-          ### 📋 Changes
-          See the [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for detailed changes.
+        TAG_NAME: ${{ github.ref_name }}
+        REPOSITORY: ${{ github.repository }}
+      run: |
+        {
+          printf '## 🚀 Azure DevOps Extension v%s\n\n' "$RELEASE_VERSION"
+          printf '### 📦 Installation\n\n'
+          printf '**Recommended: Install from Azure DevOps Marketplace**\n\n'
+          printf 'Install directly from the marketplace: [Cloudsmith CLI Setup & Authenticate](https://marketplace.visualstudio.com/items?itemName=Cloudsmith.CloudsmithCliSetupAndAuthenticate)\n\n'
+          printf '**Alternative: Manual Installation (for self-hosted Azure DevOps Server)**\n\n'
+          printf "If you're using a self-hosted Azure DevOps Server, download and manually install:\n"
+          printf '1. Download the `%s` file from this release\n' "$VSIX_FILENAME"
+          printf '2. Go to **Organization Settings** → **Extensions** → **Manage Extensions**\n'
+          printf '3. Click **"Upload new extension"** and upload the VSIX file\n\n'
+          printf '### 📋 Changes\n'
+          printf 'See the [CHANGELOG.md](https://github.com/%s/blob/main/CHANGELOG.md) for detailed changes.\n' "$REPOSITORY"
+        } > RELEASE_NOTES.md
+        gh release create "$TAG_NAME" "$VSIX_FILE" \
+          --verify-tag \
+          --title "Release v$RELEASE_VERSION" \
+          --generate-notes \
+          --notes-file RELEASE_NOTES.md
 
     - name: Summary
       env:
