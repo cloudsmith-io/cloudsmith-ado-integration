@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2026-07-30
 ### 🚀 Changed
 - **Standalone CLI binary**
   The task now installs the self-contained Cloudsmith CLI binary via the bundled installer scripts (`install.sh` / `install.ps1`). No Python or pip is required on the agent.
@@ -23,6 +23,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   `CLOUDSMITH_API_KEY` is now exported as a secret pipeline variable; map it into the `env` of steps that need it.
 - **Dependency updates**
   Applied `npm audit fix` for transitive dependencies, and bumped `azure-pipelines-task-lib` from `^4.17.3` to `^5.278.0`, clearing high-severity advisories in `adm-zip`, `minimatch`, and `uuid` (`uuid` is no longer a dependency of the task lib as of v5).
+
+### ✨ Added
+- **Security policy and marketplace overview**
+  Added `SECURITY.md` with private vulnerability reporting guidance, and a marketplace overview page with a working license link.
 
 ### ✂️ Removed
 - **`pipInstall` and `oidcAuthOnly` inputs**
