@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'cloudsmith-task/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: cloudsmith-task
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check cloudsmith-task/main.js
+          node --check tests/main.test.js
+          node --check tests/contract.test.js
+
+      - name: Validate manifests
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('vss-extension.json', 'utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('cloudsmith-task/task.json', 'utf8'))"
+
+      - name: Check installer scripts
+        run: |
+          sh -n cloudsmith-task/installer/install.sh
+          test -s cloudsmith-task/installer/VERSION
+
+      - name: Run unit tests
+        working-directory: cloudsmith-task
+        run: npm test
+
+      - name: Package extension
+        run: |
+          npx tfx-cli@0.23.4 extension create --manifest-globs vss-extension.json --output-path dist/
+
+      - name: Verify VSIX contents
+        run: |
+          VSIX_FILE=$(find dist/ -name "*.vsix" | head -n 1)
+          for f in main.js task.json installer/install.sh installer/install.ps1 installer/VERSION; do
+            unzip -l "$VSIX_FILE" | grep -q "cloudsmith-task/$f" || { echo "missing cloudsmith-task/$f in VSIX"; exit 1; }
+          done
+          unzip -p "$VSIX_FILE" cloudsmith-task/installer/install.sh | cmp - cloudsmith-task/installer/install.sh
+          unzip -p "$VSIX_FILE" cloudsmith-task/installer/install.ps1 | cmp - cloudsmith-task/installer/install.ps1
+
+  test-windows:
+    name: Test (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'cloudsmith-task/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: cloudsmith-task
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: cloudsmith-task
+        run: npm test

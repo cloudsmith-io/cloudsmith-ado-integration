@@ -1,74 +1,64 @@
-# 🚀 Automated Release Setup
+# Automated Release Setup
 
-This repository uses GitHub Actions to automatically build and publish the Azure DevOps extension when a new version tag is pushed.
+The release workflow builds and publishes the Azure DevOps extension when a semantic version tag is pushed.
 
-## 📋 Required Setup
+## Required configuration
 
-### 1. Repository Variables
-Go to **Settings** → **Secrets and variables** → **Actions** → **Variables** tab:
+Configure the following under **Settings > Secrets and variables > Actions**.
 
-- **`AZURE_DEVOPS_PUBLISHER_ID`**: Your Azure DevOps Marketplace publisher ID (e.g., `Cloudsmith`)
+| Type | Name | Purpose |
+| --- | --- | --- |
+| Variable | `AZURE_DEVOPS_PUBLISHER_ID` | Azure DevOps Marketplace publisher ID, normally `Cloudsmith` |
+| Secret | `AZURE_DEVOPS_PAT` | Marketplace publishing token with the `Marketplace (Publish)` scope |
 
-### 2. Repository Secrets  
-Go to **Settings** → **Secrets and variables** → **Actions** → **Secrets** tab:
+## Version and compatibility rules
 
-- **`AZURE_DEVOPS_PAT`**: Personal Access Token for Azure DevOps Marketplace
-  - Scopes required: **Marketplace (Publish)**
-  - Get it from: https://dev.azure.com/_usersSettings/tokens
+Before tagging a release, the following versions must match:
 
-## 🏗️ How It Works
+- `vss-extension.json` → `version`
+- `cloudsmith-task/task.json` → `version.Major`, `version.Minor`, and `version.Patch`
+- `cloudsmith-task/package.json` → `version`
+- The Git tag without its leading `v`
 
-### Automatic Release Process:
-1. **Tag Push**: Push a version tag like `v1.1.0`
-2. **Build**: GitHub Actions builds the extension using `tfx extension create`  
-3. **Validate**: Ensures tag version matches `vss-extension.json` version
-4. **Publish**: Publishes to Azure DevOps Marketplace using `tfx extension publish`
-5. **Release**: Creates GitHub release with VSIX file attached
+Do not change the extension publisher, extension ID, task GUID, or task name. These stable identifiers allow existing pipelines to continue resolving their selected task major.
 
-### Usage:
+Version 1 source is maintained on the `v1` branch. Pipelines using `CloudsmithCliSetupAndAuthenticate@1` remain on that major; publishing version 2 does not require users to migrate automatically.
+
+## Release process
+
+1. Update the extension, task, and package versions.
+2. Update `CHANGELOG.md` and the migration documentation.
+3. Run the test suite and package the extension locally.
+4. Commit and merge the release changes.
+5. Create and push the matching semantic version tag.
+
+For example, for version `2.0.0`:
+
 ```bash
-# 1. Update version in vss-extension.json and task.json
-# 2. Commit changes
-git add .
-git commit -m "chore: bump version to 1.1.0"
+cd cloudsmith-task
+npm ci
+npm test
+cd ..
+npx tfx-cli extension create --manifest-globs vss-extension.json --output-path dist/
 
-# 3. Create and push tag
-git tag v1.1.0
-git push origin v1.1.0
-
-# 4. GitHub Actions will automatically:
-#    - Build the .vsix file
-#    - Publish to marketplace  
-#    - Create GitHub release
+git tag v2.0.0
+git push origin v2.0.0
 ```
 
-## 📁 Files Involved
+The workflow then:
 
-- **`.github/workflows/release.yml`**: Main workflow file
-- **`vss-extension.json`**: Extension manifest (version must match tag)
-- **`cloudsmith-task/task.json`**: Task definition (version must match tag)
-- **`cloudsmith-task/package.json`**: Node.js dependencies
+1. Confirms the tag, extension manifest, task manifest, and package versions match.
+2. Runs the unit and public-contract tests.
+3. Confirms that the `v1` maintenance branch exists for a version 2 or later release.
+4. Builds and publishes the VSIX to the Azure DevOps Marketplace.
+5. Creates a GitHub release with the VSIX attached.
 
-## 🔍 Workflow Features
+## Troubleshooting
 
-- ✅ **Version Validation**: Ensures tag matches manifest version
-- ✅ **Dependency Installation**: Installs npm dependencies
-- ✅ **Extension Build**: Creates `.vsix` file using TFX CLI
-- ✅ **Marketplace Publish**: Publishes to Azure DevOps Marketplace
-- ✅ **GitHub Release**: Creates release with VSIX download
-- ✅ **Release Notes**: Auto-generates release notes
-- ✅ **Build Summary**: Provides detailed build information
-
-## 🐛 Troubleshooting
-
-### Common Issues:
-1. **Version Mismatch**: Ensure tag version matches `vss-extension.json` version
-2. **PAT Expired**: Update `AZURE_DEVOPS_PAT` secret with fresh token
-3. **Publisher ID**: Verify `AZURE_DEVOPS_PUBLISHER_ID` variable is correct
-4. **Node Dependencies**: Check `cloudsmith-task/package.json` for issues
-
-### Debug Steps:
-1. Check **Actions** tab for detailed logs
-2. Verify all secrets and variables are set
-3. Ensure PAT has **Marketplace (Publish)** scope
-4. Validate JSON syntax in manifest files
+| Problem | Check |
+| --- | --- |
+| Version mismatch | Align all three manifests with the Git tag. |
+| Contract test failure | Restore the stable extension/task identity or document and plan a new major. |
+| Missing `v1` branch | Restore the version 1 maintenance branch before releasing version 2 or later. |
+| Marketplace authentication failure | Confirm `AZURE_DEVOPS_PAT` is current and has `Marketplace (Publish)` scope. |
+| Publisher mismatch | Confirm `AZURE_DEVOPS_PUBLISHER_ID` matches the manifest publisher. |

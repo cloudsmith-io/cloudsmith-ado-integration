@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+# Fake cloudsmith executable used by unit tests. Fails unless it receives
+# the auth environment the task is expected to pass to child processes.
+if [ "${FAKE_CLOUDSMITH_FAIL:-}" = "1" ]; then
+  echo "cloudsmith: authentication failed" >&2
+  exit 1
+fi
+if [ -n "${CLOUDSMITH_API_KEY:-}" ]; then
+  echo "You are authenticated as fake-user ($*)."
+  exit 0
+fi
+if [ -n "${CLOUDSMITH_ORG:-}" ] && [ -n "${CLOUDSMITH_SERVICE_SLUG:-}" ] &&
+   [ -n "${SYSTEM_OIDCREQUESTURI:-}" ] && [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+  echo "You are authenticated as fake-service ($*)."
+  exit 0
+fi
+echo "cloudsmith: no auth environment provided" >&2
+exit 1

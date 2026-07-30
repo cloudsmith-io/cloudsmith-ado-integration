@@ -1,81 +1,74 @@
-## Contributing to Cloudsmith Azure DevOps Extension
+# Contributing
 
-We welcome contributions to this project. This document outlines the setup instructions and guidelines for contributing.
+Thank you for contributing to the Cloudsmith Azure DevOps integration.
 
-## Pull Requests
-- Fork the repository and create your branch from main.
-- Ensure the code adheres to the project’s coding guidelines and includes necessary documentation.
-- Make sure all tests pass locally.
-- Submit a pull request with a description of the changes.
+## Public contract
+
+The Marketplace extension and task identities allow existing pipelines to resolve the correct task major. Do not change these values:
+
+| File | Field | Stable value |
+| --- | --- | --- |
+| `vss-extension.json` | `publisher` | `Cloudsmith` |
+| `vss-extension.json` | `id` | `CloudsmithCliSetupAndAuthenticate` |
+| `cloudsmith-task/task.json` | `id` | `06C63887-BA6C-4F36-8BB5-34A817634C29` |
+| `cloudsmith-task/task.json` | `name` | `CloudsmithCliSetupAndAuthenticate` |
+
+The `cliVersion`, `authMethod`, `oidcNamespace`, `oidcServiceSlug`, and `apiKey` input names are also part of the migration contract. Changes to their meaning require a new task major and a migration guide.
+
+Version 1 remains on the `v1` branch. Version 2 intentionally does not include the removed `pipInstall` and `oidcAuthOnly` compatibility paths.
 
 ## Prerequisites
 
-1. **Node.js (version 14.x or later)**:
- Download and install Node.js from [here](https://nodejs.org/en/).
+- Node.js 20
+- npm
+- [Azure DevOps Extension CLI (`tfx-cli`)](https://github.com/microsoft/tfs-cli), when packaging the extension
 
-2. **Azure DevOps Extension Tool (tfx-cli)**:
-   The `tfx` CLI tool is required to create, package, and publish the extension.
-   
-    ```bash
-    npm install -g tfx-cli
-    ```
+## Repository layout
 
-3. **Azure DevOps Personal Access Token (PAT)**:
-   To publish the extension, you need a PAT with the appropriate permissions.
+- `cloudsmith-task/main.js` contains the Azure Pipelines task handler.
+- `cloudsmith-task/task.json` defines the public inputs, outputs, and task version.
+- `cloudsmith-task/installer/` contains synchronized Cloudsmith CLI installer scripts.
+- `tests/` contains unit, platform-behaviour, security, and public-contract tests.
+- `vss-extension.json` defines the Marketplace extension.
 
-## Project Setup and Build Instructions
+## Local development
 
-1. **Clone the Repository**:
-   First, clone the repository to your local machine:
+Install dependencies and run the checks:
 
-   ```bash
-   git clone https://github.com/cloudsmith-io/cloudsmith-ado-integration.git
-   cd cloudsmith-ado-integration
-   ```
+```bash
+cd cloudsmith-task
+npm ci
+node --check main.js
+npm test
+```
 
-2. **Install Dependencies**:
-   Run the following command to install the necessary dependencies, including azure-pipelines-task-lib and axios:
-   
-   ```bash
-   npm install
-   ```
+Do not use real API keys, PATs, or OIDC tokens in local tests. The test suite uses fake installers and credentials and must not contact Cloudsmith or Azure DevOps.
 
-3. **Create a GUID for the Task ID**:
-   Azure DevOps tasks require a globally unique ID. Use the following command to generate a new GUID:
-   
-   ```bash
-   uuidgen
-   ```
+## Package the extension
 
-   Update the generated GUID in the task.json file
-   ```json
-   "id": "YOUR-GENERATED-GUID-HERE"
-   ```
+From the repository root:
 
-4. **Build the Project**:
-   Once the dependencies are installed and the task is configured, you can build the project. If TypeScript is being used, compile the TypeScript files:
-   
-   ```bash
-   npm run build
-   ```
+```bash
+npx tfx-cli extension create \
+  --manifest-globs vss-extension.json \
+  --output-path dist/
+```
 
-5. **Build the Project**:
-   You can test the task locally by running it with Node.js. Set up your environment variables and use npm to run your task locally before publishing it to the Azure DevOps Marketplace.
+Inspect the generated VSIX before publishing and confirm it contains `main.js`, `task.json`, and both installer scripts.
 
-6. **Package the Extension**:
-   To package the extension into a .vsix file, use the following command:
+## Pull requests
 
-   ```bash
-   tfx extension create --manifest-globs vss-extension.json
-   ```
+1. Create a branch from `main`.
+2. Make a focused change and update the relevant documentation.
+3. Run the local checks and package the extension when task contents change.
+4. Describe user-visible behaviour, migration impact, and validation in the pull request.
 
-7. **Publish the Extension**:
-   You can now publish the packaged .vsix file to the Azure DevOps Marketplace using the tfx CLI and your Personal Access Token (PAT):
+Use Conventional Commit prefixes such as `feat:`, `fix:`, `test:`, `docs:`, `ci:`, and `chore:`. Use `feat!:` for a breaking task change.
 
-   ```bash
-   tfx extension publish --manifest-globs vss-extension.json --publisher YOUR-PUBLISHER-ID --token YOUR-PAT
-   ```
+## Releases
+
+See [Automated Release Setup](.github/RELEASE_SETUP.md) for version alignment, tagging, and publishing instructions.
 
 ## License
 
-This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+This project is available under the [Apache License 2.0](LICENSE).

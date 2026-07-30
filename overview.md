@@ -1,61 +1,63 @@
-# Cloudsmith CLI Installer for Azure DevOps Pipelines
+# Cloudsmith CLI Setup & Authenticate for Azure DevOps Pipelines
 
-## Overview
-
-This extension allows Azure DevOps pipelines to easily install and authenticate the [Cloudsmith CLI](https://cloudsmith.com/). The Cloudsmith CLI provides powerful command-line tools to manage packages, repositories, and various artifact types on Cloudsmith.
+This extension installs the standalone [Cloudsmith CLI](https://github.com/cloudsmith-io/cloudsmith-cli) in your Azure DevOps pipelines and configures authentication with Cloudsmith. The CLI is a self-contained binary — no Python or pip required on the agent.
 
 With this extension, you can:
 
-- Install the Cloudsmith CLI directly in your CI/CD pipelines.
-- Install the Cloudsmith CLI via pip (`pipInstall`) instead of the default zipapp installer.
-- Authenticate using either an API Key or OpenID Connect (OIDC).
-- Authenticate only via OIDC without installing the CLI (`oidcAuthOnly`).
+- Install the latest or a pinned version of the Cloudsmith CLI on Linux, macOS, and Windows agents.
+- Authenticate using an API key or Azure DevOps native OIDC (no Azure AD app registration).
+- Use the `cloudsmith` command directly in subsequent steps — the task adds it to `PATH`.
 
+## Getting started
 
-## Features
+1. Add the `CloudsmithCliSetupAndAuthenticate@2` task to your pipeline.
+2. Choose an authentication method:
+   - **API key**: provide `apiKey` from a secret pipeline variable.
+   - **OIDC**: provide `oidcNamespace` and `oidcServiceSlug`, configure an [OIDC provider in Cloudsmith](https://docs.cloudsmith.com/authentication/openid-connect) with audience `api://AzureADTokenExchange`, and map `SYSTEM_ACCESSTOKEN: $(System.AccessToken)` in the step `env`.
+3. Optionally pin `cliVersion` and enable `verifyAuth` to run `cloudsmith whoami`.
 
-- **Cloudsmith CLI Installation**: Easily install the latest or a specific version of the Cloudsmith CLI in your Azure DevOps pipeline. Install via zipapp or pip, with optional version specification.
-- **Authentication**: Choose between API Key authentication or OIDC authentication. Use the `oidcAuthOnly` option to authenticate only via OIDC without installing the CLI.
-- **Customizable**: Choose your installation method (pip or zipapp) and specify the version of the Cloudsmith CLI, or use the latest by default.
-
-## Getting Started
-
-1. Add this task to your Azure DevOps pipeline.
-2. Choose your authentication method (API Key or OIDC). 
-   - If using **API Key** authentication, you must provide the `apiKey`.
-   - If using **OIDC** authentication, you must provide the  `oidcNamespace` and `oidcServiceSlug`.
-   - If using **OIDC Auth Only** (`oidcAuthOnly`), the task will skip installing the CLI and only perform OIDC authentication.
-3. Optionally, specify the Cloudsmith CLI version you want to install.
-   - If using **pipInstall**, the CLI will be installed from PyPI via pip. You can still specify a version with `cliVersion`.
-4. Enjoy seamless integration with Cloudsmith for managing your artifacts.
-
-### Example YAML Configuration
-
-Below is an example of how to use the Cloudsmith CLI Installer in your Azure DevOps pipeline YAML:
+### Example: OIDC
 
 ```yaml
-jobs:
-  - job: InstallCloudsmith
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    # Install and Authenticate with Cloudsmith CLI
-    - task: CloudsmithCliSetupAndAuthenticate
-      inputs:
-        cliVersion: '1.3.1'  # Optional: Specify Cloudsmith CLI version to install (Leave empty to install the latest version)
-        oidcAuthOnly: false   # Set to true to skip installation and authenticate only via OIDC
-        pipInstall: false     # Set to true to install via pip instead of zipapp
-        authMethod: 'apiKey' # Choose 'apiKey' for API Key authentication or 'oidc' for OIDC authentication
-        apiKey: '$(CLOUDSMITH_API_KEY)'  # Only required if using 'apiKey' authentication
-        oidcNamespace: '$(your-namespace)'  # Required if authMethod is set to 'oidc'.
-        oidcServiceSlug: '$(your-service-slug)'  # Required if authMethod is set to 'oidc'.
+steps:
+  - task: CloudsmithCliSetupAndAuthenticate@2
+    inputs:
+      cliVersion: '1.20.0'
+      authMethod: 'oidc'
+      oidcNamespace: 'your-org'
+      oidcServiceSlug: 'your-service-account'
+      verifyAuth: true
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-
-    # Example Cloudsmith push
-    - script: |
-        cloudsmith push raw $(CLOUDSMITH_ORG)/$(CLOUDSMITH_REPO) my-package.zip
-      displayName: 'Push package to Cloudsmith'
+  - script: cloudsmith push raw your-org/your-repo my-package.zip
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 ```
 
+`SYSTEM_ACCESSTOKEN` must be mapped on the task and on every later step that runs an authenticated `cloudsmith` command — the CLI exchanges the OIDC token on first use.
+
+### Example: API key
+
+```yaml
+steps:
+  - task: CloudsmithCliSetupAndAuthenticate@2
+    inputs:
+      authMethod: 'apiKey'
+      apiKey: $(MY_CLOUDSMITH_API_KEY)
+      verifyAuth: true
+
+  - script: cloudsmith push raw your-org/your-repo my-package.zip
+    env:
+      CLOUDSMITH_API_KEY: $(CLOUDSMITH_API_KEY)
+```
+
+The task exports `CLOUDSMITH_API_KEY` as a secret pipeline variable; map it into the `env` of steps that need it.
+
+## Upgrading from @1
+
+`@2` installs the standalone CLI binary instead of the Python zipapp, and the CLI now performs the OIDC token exchange itself. The `pipInstall` and `oidcAuthOnly` inputs were removed, the exchanged OIDC token is no longer exported as `$(CLOUDSMITH_API_KEY)`, and the OIDC audience changed from `cloudsmith` to `api://AzureADTokenExchange` — update your Cloudsmith OIDC provider configuration accordingly. See the [migration guide](https://github.com/cloudsmith-io/cloudsmith-ado-integration#migrating-from-1-to-2) for details.
+
 ## Support
-If you encounter any issues or need help, feel free to reach out to us via the Cloudsmith support team at [support@cloudsmith.io](mailto:support@cloudsmith.io).
+
+If you encounter any issues or need help, reach out to the Cloudsmith support team at [support@cloudsmith.io](mailto:support@cloudsmith.io).
