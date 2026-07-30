@@ -21,6 +21,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### 🛡️ Security
 - **API key masked**
   `CLOUDSMITH_API_KEY` is now exported as a secret pipeline variable; map it into the `env` of steps that need it.
+- **Dependency updates**
+  Applied `npm audit fix` for transitive dependencies, and bumped `azure-pipelines-task-lib` from `^4.17.3` to `^5.278.0`, clearing high-severity advisories in `adm-zip`, `minimatch`, and `uuid` (`uuid` is no longer a dependency of the task lib as of v5).
 
 ### ✂️ Removed
 - **`pipInstall` and `oidcAuthOnly` inputs**

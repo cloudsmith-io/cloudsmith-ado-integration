@@ -10,7 +10,7 @@
   },
   "main": "main.js",
   "dependencies": {
-    "azure-pipelines-task-lib": "^4.17.3"
+    "azure-pipelines-task-lib": "^5.278.0"
   },
   "scripts": {
     "test": "node --test ../tests/main.test.js ../tests/contract.test.js"
