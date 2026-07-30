@@ -67,11 +67,14 @@ jobs:
 
     - name: Verify the version 1 maintenance line
       env:
+        # The checkout does not persist credentials, so query the API
+        # instead of the git remote.
+        GH_TOKEN: ${{ github.token }}
         VERSION: ${{ steps.version.outputs.version }}
       run: |
         MAJOR=${VERSION%%.*}
         if [ "$MAJOR" -ge 2 ]; then
-          git ls-remote --exit-code --heads origin refs/heads/v1 >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/branches/v1" --jq .name >/dev/null
           echo "The v1 maintenance branch is available for existing task users."
         fi
         
