@@ -32,6 +32,7 @@ $ProgressPreference = "SilentlyContinue"
 # construction entirely.
 $DownloadBaseUrl = "https://dl.cloudsmith.io/public"
 $ManifestNamePrefix = "cloudsmith-cli-manifest"
+$script:InstallerUserAgent = "cloudsmith-cli-install-script"
 
 $script:WorkDir = $null
 $script:LockStream = $null
@@ -87,6 +88,17 @@ function Resolve-DownloadRedirect {
     return $nextUri.AbsoluteUri
 }
 
+function Get-InstallerWebRequest {
+    param([Parameter(Mandatory = $true)][string]$Uri)
+
+    $request = [System.Net.HttpWebRequest][System.Net.WebRequest]::Create($Uri)
+    $request.AllowAutoRedirect = $false
+    $request.UserAgent = $script:InstallerUserAgent
+    $request.Timeout = 300000
+    $request.ReadWriteTimeout = 300000
+    return $request
+}
+
 function Invoke-HttpsDownload {
     param(
         [Parameter(Mandatory = $true)][string]$Uri,
@@ -99,10 +111,7 @@ function Invoke-HttpsDownload {
     while ($true) {
         Test-DownloadUriAllowed -Uri $currentUri
 
-        $request = [System.Net.HttpWebRequest][System.Net.WebRequest]::Create($currentUri)
-        $request.AllowAutoRedirect = $false
-        $request.Timeout = 300000
-        $request.ReadWriteTimeout = 300000
+        $request = Get-InstallerWebRequest -Uri $currentUri
 
         $response = $null
         try {
@@ -173,7 +182,8 @@ function Invoke-Download {
             # download to a temp path and copy to the destination literally.
             $tempFile = [System.IO.Path]::GetTempFileName()
             try {
-                Invoke-WebRequest -UseBasicParsing -Uri $Uri -OutFile $tempFile -TimeoutSec 300 | Out-Null
+                Invoke-WebRequest -UseBasicParsing -Uri $Uri -OutFile $tempFile `
+                    -TimeoutSec 300 -UserAgent $script:InstallerUserAgent | Out-Null
                 [System.IO.File]::Copy($tempFile, $Destination, $true)
             }
             finally {
@@ -208,6 +218,19 @@ function Get-KeyValueFile {
     return $values
 }
 
+function Get-OSArchitecture {
+    try {
+        return [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+    }
+    catch {
+        $architecture = $env:PROCESSOR_ARCHITEW6432
+        if (-not $architecture) {
+            $architecture = $env:PROCESSOR_ARCHITECTURE
+        }
+        return $architecture
+    }
+}
+
 function Get-DetectedTarget {
     if ($Target) {
         if ($Target -notmatch '^[A-Za-z0-9._-]+$' -or $Target -eq '.' -or $Target -eq '..') {
@@ -220,15 +243,7 @@ function Get-DetectedTarget {
         throw "install.ps1: this installer is intended for Windows; use install.sh on Unix hosts"
     }
 
-    try {
-        $architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
-    }
-    catch {
-        $architecture = $env:PROCESSOR_ARCHITEW6432
-        if (-not $architecture) {
-            $architecture = $env:PROCESSOR_ARCHITECTURE
-        }
-    }
+    $architecture = Get-OSArchitecture
 
     switch -Regex ($architecture) {
         '^(X64|AMD64)$' { return "windows-x86_64" }
@@ -339,6 +354,7 @@ try {
 
     $resolvedTarget = Get-DetectedTarget
     Write-InstallerLog "detected target $resolvedTarget"
+    $script:InstallerUserAgent = "cloudsmith-cli-install-script (Windows; $(Get-OSArchitecture))"
 
     $temporaryRoot = Join-Path $InstallRoot ".tmp"
     [void][System.IO.Directory]::CreateDirectory($temporaryRoot)
