@@ -145,6 +145,51 @@ function configureAuthentication() {
   throw new Error(`Unsupported authMethod: ${authMethod}. Use apiKey or oidc.`);
 }
 
+const UNSUPPORTED_CREDENTIAL_RESPONSE =
+  'The CLI returned an invalid or unsupported credential-helper response.';
+
+// Accepts only the version 1 document of 'cloudsmith credential-helper generic'.
+function parseCredentialHelperOutput(output) {
+  let document;
+  try {
+    document = JSON.parse(output);
+  } catch {
+    throw new Error(UNSUPPORTED_CREDENTIAL_RESPONSE);
+  }
+  const isSupported =
+    document !== null &&
+    typeof document === 'object' &&
+    !Array.isArray(document) &&
+    Object.keys(document).sort().join(',') === 'password,username,version' &&
+    document.version === 1 &&
+    document.username === 'token' &&
+    typeof document.password === 'string' &&
+    document.password.length > 0;
+  if (!isSupported) {
+    throw new Error(UNSUPPORTED_CREDENTIAL_RESPONSE);
+  }
+  return { username: document.username, password: document.password };
+}
+
+// Resolves the effective credential once, so OIDC performs a single exchange.
+function exportAuthToken(executable, authEnv) {
+  let output;
+  try {
+    output = runProcess(executable, ['credential-helper', 'generic'], true, {
+      ...envWithoutInputs(),
+      ...authEnv,
+    });
+  } catch (error) {
+    throw new Error(
+      `Failed to resolve credentials (${error.message}). exportAuthToken requires Cloudsmith CLI 1.21.0 or later and valid credentials.`,
+    );
+  }
+  const credential = parseCredentialHelperOutput(output);
+  exportVariable('CLOUDSMITH_API_KEY', credential.password, true);
+  exportVariable('CLOUDSMITH_USERNAME', credential.username, false);
+  return credential.password;
+}
+
 async function run(installerDir) {
   try {
     // Mask the API key in logs before any child process runs.
@@ -173,7 +218,10 @@ async function run(installerDir) {
     tl.setVariable('cliPath', installation.executable, false, true);
     tl.setVariable('binDirectory', installation.bin_dir, false, true);
 
-    const authEnv = configureAuthentication();
+    let authEnv = configureAuthentication();
+    if (tl.getBoolInput('exportAuthToken', false)) {
+      authEnv = { ...authEnv, CLOUDSMITH_API_KEY: exportAuthToken(installation.executable, authEnv) };
+    }
 
     if (tl.getBoolInput('verifyAuth', false)) {
       runProcess(installation.executable, ['whoami'], false, {
@@ -191,7 +239,7 @@ async function run(installerDir) {
   }
 }
 
-module.exports = { parseInstallerOutput, installCli, run };
+module.exports = { parseInstallerOutput, parseCredentialHelperOutput, installCli, run };
 
 if (require.main === module) {
   run();

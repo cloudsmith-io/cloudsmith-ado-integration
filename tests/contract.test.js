@@ -46,3 +46,10 @@ test('version 2 does not reintroduce removed compatibility inputs', () => {
   }
   assert.deepStrictEqual(Object.keys(taskPackage.dependencies), ['azure-pipelines-task-lib']);
 });
+
+test('exportAuthToken is an opt-in boolean input', () => {
+  const input = taskManifest.inputs.find(({ name }) => name === 'exportAuthToken');
+  assert.ok(input, 'missing input: exportAuthToken');
+  assert.strictEqual(input.type, 'boolean');
+  assert.strictEqual(input.defaultValue, 'false');
+});

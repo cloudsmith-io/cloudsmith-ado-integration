@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "CloudsmithCliSetupAndAuthenticate",
   "publisher": "Cloudsmith",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "name": "Cloudsmith CLI Setup & Authenticate",
   "description": "An Azure DevOps extension to install the standalone Cloudsmith CLI and authenticate using API Key or OIDC.",
   "targets": [

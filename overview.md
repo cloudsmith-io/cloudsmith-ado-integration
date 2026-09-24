@@ -15,6 +15,7 @@ With this extension, you can:
    - **API key**: provide `apiKey` from a secret pipeline variable.
    - **OIDC**: provide `oidcNamespace` and `oidcServiceSlug`, configure an [OIDC provider in Cloudsmith](https://docs.cloudsmith.com/authentication/openid-connect) with audience `api://AzureADTokenExchange`, and map `SYSTEM_ACCESSTOKEN: $(System.AccessToken)` in the step `env`.
 3. Optionally pin `cliVersion` and enable `verifyAuth` to run `cloudsmith whoami`.
+4. Optionally enable `exportAuthToken` to export the resolved token as the secret variable `CLOUDSMITH_API_KEY` for other tools. This requires Cloudsmith CLI 1.21.0 or later.
 
 ### Example: OIDC
 
@@ -56,7 +57,7 @@ The task exports `CLOUDSMITH_API_KEY` as a secret pipeline variable; map it into
 
 ## Upgrading from @1
 
-`@2` installs the standalone CLI binary instead of the Python zipapp, and the CLI now performs the OIDC token exchange itself. The `pipInstall` and `oidcAuthOnly` inputs were removed, the exchanged OIDC token is no longer exported as `$(CLOUDSMITH_API_KEY)`, and the OIDC audience changed from `cloudsmith` to `api://AzureADTokenExchange` — update your Cloudsmith OIDC provider configuration accordingly. See the [migration guide](https://github.com/cloudsmith-io/cloudsmith-ado-integration#migrating-from-1-to-2) for details.
+`@2` installs the standalone CLI binary instead of the Python zipapp, and the CLI now performs the OIDC token exchange itself. The `pipInstall` and `oidcAuthOnly` inputs were removed. The exchanged OIDC token is exported as `$(CLOUDSMITH_API_KEY)` only when you set `exportAuthToken: true`. The OIDC audience changed from `cloudsmith` to `api://AzureADTokenExchange` — update your Cloudsmith OIDC provider configuration accordingly. See the [migration guide](https://github.com/cloudsmith-io/cloudsmith-ado-integration#migrating-from-1-to-2) for details.
 
 ## Support
 
