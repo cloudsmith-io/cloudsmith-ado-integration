@@ -5,6 +5,24 @@ if [ "${FAKE_CLOUDSMITH_FAIL:-}" = "1" ]; then
   echo "cloudsmith: authentication failed" >&2
   exit 1
 fi
+if [ -n "${FAKE_CLOUDSMITH_LOG:-}" ]; then
+  echo "$* key=${CLOUDSMITH_API_KEY:-}" >> "$FAKE_CLOUDSMITH_LOG"
+fi
+if [ "$*" = "credential-helper generic" ]; then
+  if [ -n "${FAKE_CREDENTIAL_HELPER_OUTPUT:-}" ]; then
+    printf '%s\n' "$FAKE_CREDENTIAL_HELPER_OUTPUT"
+    exit 0
+  fi
+  # Match CLI precedence: an API key wins over OIDC.
+  token="${CLOUDSMITH_API_KEY:-}"
+  if [ -z "$token" ] && [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+    token="exchanged-${CLOUDSMITH_SERVICE_SLUG:-}"
+  fi
+  if [ -n "$token" ]; then
+    printf '{"version":1,"username":"token","password":"%s"}\n' "$token"
+    exit 0
+  fi
+fi
 if [ -n "${CLOUDSMITH_API_KEY:-}" ]; then
   echo "You are authenticated as fake-user ($*)."
   exit 0

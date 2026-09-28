@@ -5,6 +5,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.1.0] - 2026-09-24
+### ✨ Added
+- **`exportAuthToken` input**
+  When enabled, the task resolves credentials with `cloudsmith credential-helper generic` and validates the version 1 JSON response. It exports `password` as the secret variable `CLOUDSMITH_API_KEY` and `username` as `CLOUDSMITH_USERNAME`. With OIDC, this restores the `@1` behaviour: later steps and other tools can use the exchanged Cloudsmith token. Requires Cloudsmith CLI 1.21.0 or later.
+
+---
+
 ## [2.0.0] - 2026-07-30
 ### 🚀 Changed
 - **Standalone CLI binary**
@@ -116,6 +123,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+[2.1.0]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v2.1.0
 [1.2.1]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.2.1
 [1.2.0]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.2.0
 [1.1.2]: https://github.com/cloudsmith-io/cloudsmith-ado-integration/releases/tag/v1.1.2

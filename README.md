@@ -83,6 +83,35 @@ flowchart LR
 
 Set `verifyAuth: true` to run `cloudsmith whoami` during setup and fail early if authentication is not configured correctly.
 
+### Use the token with other tools
+
+Set `exportAuthToken: true` when a tool other than the CLI needs the Cloudsmith credential, for example `docker login`, `npm`, or `pip`. The task runs `cloudsmith credential-helper generic` once and exports the result:
+
+- `CLOUDSMITH_API_KEY` contains the token as a masked, secret variable. With OIDC, this is the exchanged Cloudsmith token.
+- `CLOUDSMITH_USERNAME` contains the username that registry clients use with the token.
+
+This input requires Cloudsmith CLI 1.21.0 or later. Map the secret variable into each step that uses it:
+
+```yaml
+steps:
+  - task: CloudsmithCliSetupAndAuthenticate@2
+    displayName: Set up Cloudsmith CLI
+    inputs:
+      authMethod: oidc
+      oidcNamespace: YOUR-NAMESPACE
+      oidcServiceSlug: YOUR-SERVICE-ACCOUNT
+      exportAuthToken: true
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  - script: echo "$CLOUDSMITH_API_KEY" | docker login docker.cloudsmith.io --username "$CLOUDSMITH_USERNAME" --password-stdin
+    displayName: Log in to the Cloudsmith Docker registry
+    env:
+      CLOUDSMITH_API_KEY: $(CLOUDSMITH_API_KEY)
+```
+
+An OIDC token is short-lived. Use it in the same job, and run the setup task again in each job that needs a token.
+
 ## Configuration
 
 Set `authMethod` to `oidc` or `apiKey`, then provide the inputs required by that method.
@@ -94,6 +123,7 @@ Set `authMethod` to `oidc` or `apiKey`, then provide the inputs required by that
 | `cliVersion` | CLI version to install, such as `1.20.0` | No | `latest` |
 | `installDirectory` | Root directory for versioned CLI installations | No | Agent tools directory |
 | `verifyAuth` | Run `cloudsmith whoami` after setup | No | `false` |
+| `exportAuthToken` | Export the resolved token as `CLOUDSMITH_API_KEY` and its username as `CLOUDSMITH_USERNAME` | No | `false` |
 
 ### Authentication inputs
 
@@ -136,6 +166,8 @@ The task configures later steps through Azure Pipelines variables. Secret variab
 | OIDC | `CLOUDSMITH_SERVICE_SLUG` | Exported by the setup task |
 | OIDC | `SYSTEM_ACCESSTOKEN` | Map the short-lived Azure DevOps job token from `$(System.AccessToken)` on setup and authenticated CLI steps |
 | API key | `CLOUDSMITH_API_KEY` | Exported as a masked, secret pipeline variable; map it on later CLI steps |
+| Either, with `exportAuthToken: true` | `CLOUDSMITH_API_KEY` | The token from `cloudsmith credential-helper generic`, exported as a masked, secret pipeline variable |
+| Either, with `exportAuthToken: true` | `CLOUDSMITH_USERNAME` | The username that goes with the exported token |
 
 ## Publish a package
 
@@ -178,13 +210,13 @@ Pipelines reference the task major explicitly, so existing `CloudsmithCliSetupAn
 | --- | --- | --- |
 | Python zipapp or pip installation | Standalone binary under the agent tools directory | Remove Python, pip, and elevated-install setup used only by this task. |
 | `pipInstall` input | Removed | Delete the input. |
-| `oidcAuthOnly` input | Removed | Delete the input. The task always installs the CLI. |
+| `oidcAuthOnly` input | Removed | Delete the input. The task always installs the CLI. To export the OIDC token, set `exportAuthToken: true`. |
 
 ### Authentication changes
 
 | In `@1` | In `@2` | Migration |
 | --- | --- | --- |
-| The task exchanges the OIDC token and exports `CLOUDSMITH_API_KEY` | The CLI exchanges the token on first use | Use the CLI for authenticated operations, or perform a separate exchange if another tool needs the raw token. |
+| The task exchanges the OIDC token and exports `CLOUDSMITH_API_KEY` | The CLI exchanges the token on first use | Use the CLI for authenticated operations. If another tool needs the token, set `exportAuthToken: true`. |
 | OIDC audience `cloudsmith` | OIDC audience `api://AzureADTokenExchange` | Update the audience in the Cloudsmith OIDC provider. |
 | No explicit access-token mapping for OIDC | `SYSTEM_ACCESSTOKEN` is required in authenticated steps | Add the `env` mapping shown in the [OIDC example](#authenticate-with-oidc). |
 | `oidcServiceSlug` was optional | `oidcServiceSlug` is required | Add the service account slug to the task inputs. |

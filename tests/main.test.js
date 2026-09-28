@@ -1,6 +1,8 @@
 'use strict';
 
 const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { beforeEach, test } = require('node:test');
 
@@ -68,10 +70,13 @@ beforeEach(() => {
     'CLOUDSMITH_API_KEY',
     'CLOUDSMITH_ORG',
     'CLOUDSMITH_SERVICE_SLUG',
+    'CLOUDSMITH_USERNAME',
     'SYSTEM_OIDCREQUESTURI',
     'SYSTEM_ACCESSTOKEN',
     'FAKE_INSTALLER_FAIL',
     'FAKE_CLOUDSMITH_FAIL',
+    'FAKE_CLOUDSMITH_LOG',
+    'FAKE_CREDENTIAL_HELPER_OUTPUT',
     'INPUT_APIKEY',
     'CLIVERSION',
     'TARGET',
@@ -247,6 +252,127 @@ test('verifyAuth fails the task when whoami fails', { skip: process.platform ===
 
   assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Failed);
   assert.match(mockTl.result.message, /exited with code 1/);
+});
+
+test('parseCredentialHelperOutput returns the username and password of a version 1 document', () => {
+  assert.deepStrictEqual(
+    main.parseCredentialHelperOutput('{"version":1,"username":"token","password":"secret"}\n'),
+    { username: 'token', password: 'secret' },
+  );
+});
+
+test('parseCredentialHelperOutput rejects unsupported documents', () => {
+  for (const output of [
+    'not json',
+    '"secret"',
+    '[]',
+    '{"version":2,"username":"token","password":"secret"}',
+    '{"version":1,"username":"user","password":"secret"}',
+    '{"version":1,"username":"token","password":""}',
+    '{"version":1,"username":"token","password":7}',
+    '{"version":1,"username":"token","password":"secret","extra":true}',
+  ]) {
+    assert.throws(
+      () => main.parseCredentialHelperOutput(output),
+      /invalid or unsupported credential-helper response/,
+      output,
+    );
+  }
+});
+
+function oidcInputs(extra) {
+  process.env.SYSTEM_OIDCREQUESTURI = 'https://dev.azure.com/org/_apis/oidctoken';
+  process.env.SYSTEM_ACCESSTOKEN = 'agent-token';
+  return { authMethod: 'oidc', oidcNamespace: 'my-org', oidcServiceSlug: 'my-service', ...extra };
+}
+
+function fakeCloudsmithLog() {
+  const logPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cloudsmith-log-')), 'cloudsmith.log');
+  fs.writeFileSync(logPath, '');
+  process.env.FAKE_CLOUDSMITH_LOG = logPath;
+  return () => fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean);
+}
+
+test('exportAuthToken is off by default and does not run the credential helper', { skip: process.platform === 'win32' }, async () => {
+  mockTl.inputs = oidcInputs();
+  const readLog = fakeCloudsmithLog();
+  await main.run(fixtureInstallerDir);
+
+  assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Succeeded, mockTl.result.message);
+  assert.deepStrictEqual(readLog(), []);
+  assert.strictEqual(setVariableByName('CLOUDSMITH_API_KEY'), undefined);
+  assert.strictEqual(setVariableByName('CLOUDSMITH_USERNAME'), undefined);
+});
+
+test('exportAuthToken with oidc exports the exchanged token as a secret variable', { skip: process.platform === 'win32' }, async () => {
+  mockTl.inputs = oidcInputs({ exportAuthToken: 'true' });
+  await main.run(fixtureInstallerDir);
+
+  assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Succeeded, mockTl.result.message);
+  assert.ok(mockTl.secrets.includes('exchanged-my-service'));
+  assert.deepStrictEqual(setVariableByName('CLOUDSMITH_API_KEY'), {
+    name: 'CLOUDSMITH_API_KEY',
+    value: 'exchanged-my-service',
+    secret: true,
+    isOutput: false,
+  });
+  assert.deepStrictEqual(setVariableByName('CLOUDSMITH_USERNAME'), {
+    name: 'CLOUDSMITH_USERNAME',
+    value: 'token',
+    secret: false,
+    isOutput: false,
+  });
+});
+
+test('exportAuthToken with oidc ignores a CLOUDSMITH_API_KEY exported by an earlier step', { skip: process.platform === 'win32' }, async () => {
+  mockTl.inputs = oidcInputs({ exportAuthToken: 'true' });
+  process.env.CLOUDSMITH_API_KEY = 'earlier-token';
+  await main.run(fixtureInstallerDir);
+
+  assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Succeeded, mockTl.result.message);
+  assert.strictEqual(setVariableByName('CLOUDSMITH_API_KEY').value, 'exchanged-my-service');
+});
+
+test('exportAuthToken with apiKey exports the key resolved by the credential helper', { skip: process.platform === 'win32' }, async () => {
+  mockTl.inputs.exportAuthToken = 'true';
+  const readLog = fakeCloudsmithLog();
+  await main.run(fixtureInstallerDir);
+
+  assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Succeeded, mockTl.result.message);
+  assert.deepStrictEqual(readLog(), ['credential-helper generic key=test-key']);
+  assert.strictEqual(setVariableByName('CLOUDSMITH_USERNAME').value, 'token');
+});
+
+test('verifyAuth uses the exported token instead of a second exchange', { skip: process.platform === 'win32' }, async () => {
+  mockTl.inputs = oidcInputs({ exportAuthToken: 'true', verifyAuth: 'true' });
+  const readLog = fakeCloudsmithLog();
+  await main.run(fixtureInstallerDir);
+
+  assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Succeeded, mockTl.result.message);
+  assert.deepStrictEqual(readLog(), [
+    'credential-helper generic key=',
+    'whoami key=exchanged-my-service',
+  ]);
+});
+
+test('exportAuthToken fails with an actionable error when the credential helper fails', { skip: process.platform === 'win32' }, async () => {
+  mockTl.inputs = oidcInputs({ exportAuthToken: 'true' });
+  process.env.FAKE_CLOUDSMITH_FAIL = '1';
+  await main.run(fixtureInstallerDir);
+
+  assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Failed);
+  assert.match(mockTl.result.message, /requires Cloudsmith CLI 1\.21\.0 or later/);
+  assert.strictEqual(setVariableByName('CLOUDSMITH_USERNAME'), undefined);
+});
+
+test('exportAuthToken fails without exporting an unsupported credential-helper response', { skip: process.platform === 'win32' }, async () => {
+  mockTl.inputs = oidcInputs({ exportAuthToken: 'true' });
+  process.env.FAKE_CREDENTIAL_HELPER_OUTPUT = '{"version":2,"username":"token","password":"raw"}';
+  await main.run(fixtureInstallerDir);
+
+  assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Failed);
+  assert.match(mockTl.result.message, /invalid or unsupported credential-helper response/);
+  assert.strictEqual(setVariableByName('CLOUDSMITH_API_KEY'), undefined);
 });
 
 function withSpawnSyncSpy(fn) {
