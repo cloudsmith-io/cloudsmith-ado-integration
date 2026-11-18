@@ -1,3 +1,4 @@
+// Copyright 2026 Cloudsmith Ltd
 'use strict';
 
 // Pins the default cliVersion input to a new Cloudsmith CLI release and
