@@ -115,7 +115,7 @@ function main(args) {
   }
 
   const currentVersion = JSON.parse(fs.readFileSync('vss-extension.json', 'utf8')).version;
-  const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+  const changelog = fs.readFileSync('CHANGELOG.md', 'utf8').replace(/\r\n/g, '\n');
   const extensionVersion = nextExtensionVersion(currentVersion, hasUnreleasedChanges(changelog));
   const [, minor, patch] = parseVersion(extensionVersion);
 

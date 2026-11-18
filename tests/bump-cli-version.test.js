@@ -167,6 +167,16 @@ test('a CLI bump without unreleased changes is a patch release', () => {
   assert.match(files['CHANGELOG.md'], new RegExp(`^\\[2\\.2\\.1\\]: ${releasesUrl}/v2\\.2\\.1$`, 'm'));
 });
 
+test('a CHANGELOG.md with CRLF line endings is released', () => {
+  const changelogPath = path.join(repositoryRoot, 'CHANGELOG.md');
+  fs.writeFileSync(changelogPath, fixtures['CHANGELOG.md'].replace(/\n/g, '\r\n'));
+
+  const result = bump('1.32.0');
+
+  assert.strictEqual(result.status, 0, result.stderr);
+  assert.match(fs.readFileSync(changelogPath, 'utf8'), /^## \[2\.2\.0\] - /m);
+});
+
 for (const [description, version, reason] of [
   ['the pinned version', '1.31.3', /already pins Cloudsmith CLI 1\.31\.3/],
   ['an older version', '1.30.0', /already pins Cloudsmith CLI 1\.31\.3/],

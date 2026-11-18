@@ -10,7 +10,7 @@ Configure the following under **Settings > Secrets and variables > Actions**.
 | --- | --- | --- |
 | Variable | `AZURE_DEVOPS_PUBLISHER_ID` | Azure DevOps Marketplace publisher ID, normally `Cloudsmith` |
 | Secret | `AZURE_DEVOPS_PAT` | Marketplace publishing token with the `Marketplace (Publish)` scope |
-| Secret | `DOWNSTREAM_RELEASE_PUSH_TOKEN` | Cloudsmith Bot token with `Contents: write` that opens and merges the Cloudsmith CLI bump pull requests |
+| Secret | `DOWNSTREAM_RELEASE_PUSH_TOKEN` | Cloudsmith Bot token that opens and merges the Cloudsmith CLI bump pull requests. It needs `Contents: write`, `Pull requests: write`, and `Commit statuses: read` |
 | Secret | `CLOUDSMITH_BOT_SSH_KEY` | Private SSH key that signs the commits of Cloudsmith Bot |
 
 ## Version and compatibility rules
