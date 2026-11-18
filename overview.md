@@ -14,7 +14,7 @@ With this extension, you can:
 2. Choose an authentication method:
    - **API key**: provide `apiKey` from a secret pipeline variable.
    - **OIDC**: provide `oidcNamespace` and `oidcServiceSlug`, configure an [OIDC provider in Cloudsmith](https://docs.cloudsmith.com/authentication/openid-connect) with audience `api://AzureADTokenExchange`, and map `SYSTEM_ACCESSTOKEN: $(System.AccessToken)` in the step `env`.
-3. Optionally pin `cliVersion` and enable `verifyAuth` to run `cloudsmith whoami`.
+3. Optionally set `cliVersion` and enable `verifyAuth` to run `cloudsmith whoami`. By default, the task installs the CLI version that the task release pins. Set `cliVersion` to `latest` to install the newest release.
 4. Optionally enable `exportAuthToken` to export the resolved token as the secret variable `CLOUDSMITH_API_KEY` for other tools. This requires Cloudsmith CLI 1.21.0 or later.
 
 ### Example: OIDC
