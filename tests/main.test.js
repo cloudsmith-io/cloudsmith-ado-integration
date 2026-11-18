@@ -133,6 +133,16 @@ test('run installs the CLI, prepends PATH, and sets output variables', async () 
   assert.strictEqual(setVariableByName('binDirectory').value, mockTl.prependedPaths[0]);
 });
 
+test('run installs the pinned task.json default when cliVersion is empty', async () => {
+  const taskManifest = JSON.parse(fs.readFileSync(path.join(taskDir, 'task.json'), 'utf8'));
+  const pinnedVersion = taskManifest.inputs.find(({ name }) => name === 'cliVersion').defaultValue;
+  mockTl.inputs.cliVersion = '';
+  await main.run(fixtureInstallerDir);
+
+  assert.strictEqual(mockTl.result.result, mockTl.TaskResult.Succeeded, mockTl.result.message);
+  assert.strictEqual(setVariableByName('cliVersion').value, pinnedVersion);
+});
+
 test('run honours the installDirectory input', async () => {
   mockTl.inputs.installDirectory = path.join(__dirname, 'custom-root');
   await main.run(fixtureInstallerDir);

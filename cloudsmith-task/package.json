@@ -13,6 +13,6 @@
     "azure-pipelines-task-lib": "^5.278.0"
   },
   "scripts": {
-    "test": "node --test ../tests/main.test.js ../tests/contract.test.js"
+    "test": "node --test ../tests/main.test.js ../tests/contract.test.js ../tests/bump-cli-version.test.js"
   }
 }

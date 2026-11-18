@@ -19,9 +19,9 @@
       "name": "cliVersion",
       "type": "string",
       "label": "Cloudsmith CLI version",
-      "defaultValue": "latest",
+      "defaultValue": "1.31.3",
       "required": false,
-      "helpMarkDown": "CLI version to install (for example '1.20.0'), or 'latest'. Pin a version for reproducible pipelines."
+      "helpMarkDown": "CLI version to install (for example '1.20.0'), or 'latest'. Defaults to the CLI version that this task release pins. The maintainers update the pinned version for each CLI release with the same major version."
     },
     {
       "name": "installDirectory",

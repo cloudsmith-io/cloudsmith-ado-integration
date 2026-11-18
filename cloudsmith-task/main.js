@@ -4,6 +4,9 @@ const childProcess = require('child_process');
 const os = require('os');
 const path = require('path');
 const tl = require('azure-pipelines-task-lib/task');
+const { inputs } = require('./task.json');
+
+const DEFAULT_CLI_VERSION = inputs.find(({ name }) => name === 'cliVersion').defaultValue;
 
 function runProcess(command, args, captureStdout, env) {
   const result = childProcess.spawnSync(command, args, {
@@ -198,7 +201,7 @@ async function run(installerDir) {
       tl.setSecret(apiKey);
     }
 
-    const cliVersion = tl.getInput('cliVersion', false) || 'latest';
+    const cliVersion = tl.getInput('cliVersion', false) || DEFAULT_CLI_VERSION;
     const installRoot =
       tl.getInput('installDirectory', false) ||
       path.join(

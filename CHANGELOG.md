@@ -5,6 +5,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+### 🚀 Changed
+- **Pinned default CLI version**
+  The `cliVersion` input defaults to Cloudsmith CLI 1.31.3 instead of `latest`. A new major version of the CLI does not reach pipelines that use the default. The maintainers update the pinned version for each CLI release with the same major version. Set `cliVersion` to `latest` to install the newest release.
+
+---
+
 ## [2.1.0] - 2026-09-24
 ### ✨ Added
 - **`exportAuthToken` input**

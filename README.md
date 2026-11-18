@@ -17,7 +17,7 @@ Install the standalone [Cloudsmith CLI](https://github.com/cloudsmith-io/cloudsm
 | Agents | Linux, macOS, and Windows |
 | Architectures | x86-64, plus Linux and macOS ARM64 |
 | CLI dependencies | None; the task installs the standalone CLI binary |
-| Version selection | Latest release or a specific CLI version |
+| Version selection | A CLI version pinned by each task release, a specific CLI version, or the latest release |
 
 ## Quick start
 
@@ -120,7 +120,7 @@ Set `authMethod` to `oidc` or `apiKey`, then provide the inputs required by that
 
 | Input | Description | Required | Default |
 | --- | --- | --- | --- |
-| `cliVersion` | CLI version to install, such as `1.20.0` | No | `latest` |
+| `cliVersion` | CLI version to install, such as `1.20.0`, or `latest` | No | The CLI version that the task release pins |
 | `installDirectory` | Root directory for versioned CLI installations | No | Agent tools directory |
 | `verifyAuth` | Run `cloudsmith whoami` after setup | No | `false` |
 | `exportAuthToken` | Export the resolved token as `CLOUDSMITH_API_KEY` and its username as `CLOUDSMITH_USERNAME` | No | `false` |
